@@ -1,5 +1,5 @@
-/*! Material Home Cards v1.6.1 — https://github.com/laurentmichel/material-home-cards */
-console.info('%c MATERIAL-HOME-CARDS %c v1.6.1 ', 'color:#fff;background:#6750a4;font-weight:700', 'color:#6750a4;background:#eaddff');
+/*! Material Home Cards v1.6.2 — https://github.com/laurentmichel/material-home-cards */
+console.info('%c MATERIAL-HOME-CARDS %c v1.6.2 ', 'color:#fff;background:#6750a4;font-weight:700', 'color:#6750a4;background:#eaddff');
 
 // ---- shared/editor.js ----
 // Éditeur visuel commun : un <ha-form> natif de Home Assistant décrit par un schéma de sélecteurs.
@@ -1145,6 +1145,10 @@ class M3PopupCard extends HTMLElement {
         <div class="body"></div>
       </div>`;
     const st = popup.style;
+    // Rendue dans document.body, la popup n'hérite pas de la police du tableau de bord : on reprend celle de la carte.
+    const font = getComputedStyle(this);
+    st.fontFamily = font.fontFamily;
+    st.setProperty('-webkit-font-smoothing', font.getPropertyValue('-webkit-font-smoothing') || 'antialiased');
     st.setProperty('--m3-blur', `${Number(this._style.backdrop_blur)}px`);
     st.setProperty('--m3-radius', `${Number(this._style.border_radius)}px`);
     st.setProperty('--m3-width-desktop', `${Number(this._style.width_desktop)}px`);
