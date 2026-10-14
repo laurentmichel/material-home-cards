@@ -4,6 +4,8 @@ const STYLE = `
 :host { display: block; height: 100%; }
 ha-card {
   position: relative; overflow: hidden; height: 100%; min-height: 100px; box-sizing: border-box;
+  /* Centrage par la carte : fonctionne en grille (hauteur imposée) comme en popup (hauteur libre). */
+  display: flex; align-items: center;
   border-radius: 28px; border: none; box-shadow: none;
   background: var(--m3-bg); color: var(--m3-fg);
   touch-action: pan-y; user-select: none; -webkit-user-select: none; cursor: pointer;
@@ -16,7 +18,7 @@ ha-card {
 :host([dragging]) .fill { transition: background 300ms ease; }
 .content {
   position: relative; display: flex; align-items: center; gap: 14px;
-  height: 100%; padding: 0 20px; box-sizing: border-box;
+  width: 100%; padding: 0 20px; box-sizing: border-box;
 }
 .icon { flex: none; display: flex; color: var(--m3-icon-fg); transition: color 300ms ease; }
 .icon ha-icon { --mdc-icon-size: 24px; }

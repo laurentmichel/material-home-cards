@@ -11,6 +11,7 @@ et retombent sur les couleurs Home Assistant sinon.
 | Thermostat avec consigne réglable | `custom:m3-thermostat-card` |
 | Capteur avec courbe d'historique | `custom:m3-graph-card` |
 | Bouton pour n'importe quelle entité | `custom:m3-button-card` |
+| Popup ouverte par un `#hash` | `custom:m3-popup-card` |
 
 ## Installation (HACS)
 
@@ -21,7 +22,7 @@ et retombent sur les couleurs Home Assistant sinon.
 HACS ajoute lui-même la ressource `/hacsfiles/material-home-cards/material-home-cards.js`.
 
 Les cartes ont un **éditeur visuel** et apparaissent dans le sélecteur de cartes sous « M3 Light Slider »,
-« M3 Thermostat », « M3 Graph » et « M3 Button ».
+« M3 Thermostat », « M3 Graph », « M3 Button » et « M3 Popup ».
 Le YAML ci-dessous reste utilisable.
 
 ## `m3-light-slider-card`
@@ -112,6 +113,50 @@ tap_action:             # facultatif, sinon l'action par défaut ci-dessus
 hold_action:            # facultatif, sinon la fenêtre de détails
   action: more-info
 ```
+
+## `m3-popup-card`
+
+Popup qui s'ouvre quand l'URL contient son `#hash` : un panneau qui glisse depuis le bas sur mobile, une
+fenêtre centrée sur ordinateur. Elle contient n'importe quelles cartes. Dans le tableau de bord, la carte
+est invisible ; en mode édition, un repère avec un bouton « Ouvrir » permet de la retrouver et de la tester.
+
+Pour l'ouvrir, une action « Naviguer » vers le hash, depuis n'importe quelle carte :
+
+```yaml
+type: custom:m3-button-card
+entity: light.salon
+tap_action:
+  action: navigate
+  navigation_path: '#salon'
+```
+
+Elle se ferme en glissant l'en-tête vers le bas (mobile), avec le bouton ×, la touche Échap, le bouton
+retour du téléphone, en appuyant à côté ou après un délai.
+
+```yaml
+type: custom:m3-popup-card
+hash: '#salon'
+header:
+  name: Salon               # défaut « Popup »
+  icon: mdi:sofa
+  entity: light.salon       # facultatif
+  button_type: switch       # name (défaut), state (nom + état) ou switch (nom + état + interrupteur)
+  show_header: true
+cards:                      # n'importe quelles cartes
+  - type: custom:m3-light-slider-card
+    entity: light.salon
+settings:
+  close_by_clicking_outside: true
+  auto_close: 0             # ms, 0 = jamais
+  slide_to_close_distance: 100
+style:
+  width_desktop: 540        # px
+  width_mobile: 100         # %
+  border_radius: 28
+  backdrop_blur: 6
+```
+
+L'éditeur visuel règle le hash, l'en-tête, le comportement et l'apparence ; la liste `cards` se modifie en YAML.
 
 ## Développement
 
