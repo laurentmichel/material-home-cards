@@ -1,296 +1,296 @@
 # Material Home Cards
 
-Cartes Lovelace au style **Material Design 3** pour Home Assistant, sans dépendance.
-Elles reprennent automatiquement les couleurs d'un thème Material You
-(variables `--md-sys-color-*`, par exemple [Material You Theme](https://github.com/Nerwyn/material-you-theme))
-et retombent sur les couleurs Home Assistant sinon.
+**Material Design 3** Lovelace cards for Home Assistant, with no dependencies.
+They automatically pick up the colors of a Material You theme
+(`--md-sys-color-*` variables, for example [Material You Theme](https://github.com/Nerwyn/material-you-theme))
+and fall back to the Home Assistant colors otherwise.
 
-| Carte | Type |
+| Card | Type |
 |---|---|
-| Slider de lumière teinté avec la couleur de la lumière | `custom:m3-light-slider-card` |
-| Thermostat avec consigne réglable | `custom:m3-thermostat-card` |
-| Capteur avec courbe d'historique | `custom:m3-graph-card` |
-| Plusieurs capteurs sur un même graphique | `custom:m3-multi-graph-card` |
-| Sélecteur de scènes | `custom:m3-scene-card` |
-| Lecteur multimédia | `custom:m3-media-card` |
-| Accueil « Bonjour » avec les personnes | `custom:m3-person-card` |
-| Carte d'un robot (tondeuse Dreame…) | `custom:m3-map-card` |
-| Météo et prévisions | `custom:m3-weather-card` |
-| Tâche en cours (impression 3D, lave-linge…) | `custom:m3-progress-card` |
-| Bouton pour n'importe quelle entité | `custom:m3-button-card` |
-| Popup ouverte par un `#hash` | `custom:m3-popup-card` |
-| Pièce : température, humidité, lumière et chauffage | `custom:m3-room-card` |
-| Liste de réglages (lignes empilées) | `custom:m3-list-card` |
-| Badge pour le haut des vues | `custom:m3-badge` |
+| Light slider tinted with the light's color | `custom:m3-light-slider-card` |
+| Thermostat with adjustable target | `custom:m3-thermostat-card` |
+| Sensor with a history curve | `custom:m3-graph-card` |
+| Several sensors on one graph | `custom:m3-multi-graph-card` |
+| Scene selector | `custom:m3-scene-card` |
+| Media player | `custom:m3-media-card` |
+| "Good morning" greeting with people | `custom:m3-person-card` |
+| Robot map (Dreame mower…) | `custom:m3-map-card` |
+| Weather and forecast | `custom:m3-weather-card` |
+| Task in progress (3D print, washing machine…) | `custom:m3-progress-card` |
+| Button for any entity | `custom:m3-button-card` |
+| Popup opened by a `#hash` | `custom:m3-popup-card` |
+| Room: temperature, humidity, light and heating | `custom:m3-room-card` |
+| Settings list (stacked rows) | `custom:m3-list-card` |
+| Badge for the top of views | `custom:m3-badge` |
 
 ## Installation (HACS)
 
-1. HACS → menu ⋮ → **Dépôts personnalisés**
-2. Dépôt : `https://github.com/laurentmichel/material-home-cards`, type : **Tableau de bord** (Dashboard / Lovelace)
-3. Installer **Material Home Cards**, puis recharger la page (Ctrl+Maj+R)
+1. HACS → ⋮ menu → **Custom repositories**
+2. Repository: `https://github.com/laurentmichel/material-home-cards`, type: **Dashboard** (Lovelace)
+3. Install **Material Home Cards**, then reload the page (Ctrl+Shift+R)
 
-HACS ajoute lui-même la ressource `/hacsfiles/material-home-cards/material-home-cards.js`.
+HACS adds the `/hacsfiles/material-home-cards/material-home-cards.js` resource by itself.
 
-Les cartes ont un **éditeur visuel** et apparaissent dans le sélecteur de cartes sous « M3 Light Slider »,
-« M3 Thermostat », « M3 Graph », « M3 Button » et « M3 Popup ».
-Le YAML ci-dessous reste utilisable.
+Every card has a **visual editor** and shows up in the card picker as "M3 …" (M3 Light Slider, M3 Thermostat,
+M3 Graph, M3 Button…). The YAML below still works.
+
+The user interface of the cards (state texts, editor labels) is in French.
 
 ## `m3-light-slider-card`
 
-Toute la carte est un slider : glisser horizontalement règle la luminosité, la partie remplie
-prend la couleur réelle de la lumière (RGB ou température de blanc).
+The whole card is a slider: dragging horizontally sets the brightness, and the filled part takes the light's
+actual color (RGB or white temperature), as a pastel tone.
 
 ```yaml
 type: custom:m3-light-slider-card
-entity: light.bureau
-name: Bureau        # facultatif
-icon: mdi:lamp      # facultatif
+entity: light.office
+name: Office        # optional
+icon: mdi:lamp      # optional
 ```
 
-| Geste | Action |
+| Gesture | Action |
 |---|---|
-| Glisser horizontalement | Luminosité (au plus un appel toutes les 300 ms, valeur finale au relâchement) |
-| Appui | Allumer / éteindre |
-| Appui long | Fenêtre de détails (couleur, température) |
+| Horizontal drag | Brightness (at most one call every 300 ms, final value on release) |
+| Tap | Turn on / off |
+| Long press | More-info dialog (color, temperature) |
 
 ## `m3-thermostat-card`
 
-Consigne en grand entre deux boutons − / +, mode et température actuelle en dessous
-(« Chauffage • 23,1 °C »). La consigne affichée change dès l'appui ; une seule commande part
-0,6 s après le dernier appui.
+Large target temperature between − / + buttons, with the mode and current temperature below
+("Chauffage • 23,1 °C"). The displayed target changes as soon as you tap; a single command is sent
+0.6 s after the last tap.
 
 ```yaml
 type: custom:m3-thermostat-card
-entity: climate.salon
-name: Salon          # facultatif
-step: 0.5            # facultatif, pas des boutons − / + (défaut 0.5)
-hvac_mode: heat      # facultatif, mode utilisé par « Marche » (défaut : heat, sinon le premier mode disponible)
-icon: mdi:radiator   # facultatif, sinon l'icône suit le mode (flamme en chauffage, power à l'arrêt)
+entity: climate.living_room
+name: Living room    # optional
+step: 0.5            # optional, step of the − / + buttons (default 0.5)
+hvac_mode: heat      # optional, mode used by the "on" chip (default: heat, otherwise the first available mode)
+icon: mdi:radiator   # optional, otherwise the icon follows the mode (flame when heating, power when off)
 ```
 
-Le bouton « Marche / Arrêt » en haut à droite allume / éteint ; un appui ailleurs sur la carte ouvre la fenêtre de détails.
+The on / off chip at the top right turns the thermostat on or off; tapping anywhere else opens the more-info dialog.
 
 ## `m3-graph-card`
 
-Nom et valeur actuelle d'un capteur numérique, avec la courbe de son historique lissée en fond.
-La courbe se met à jour en direct et l'historique est rechargé toutes les 5 minutes.
+Name and current value of a numeric sensor, with its smoothed history curve in the background.
+The curve updates live and the history is reloaded every 5 minutes.
 
 ```yaml
 type: custom:m3-graph-card
-entity: sensor.pixel_8_pro_battery_level
-name: Pixel 8 Pro      # facultatif
-icon: mdi:cellphone    # facultatif, sinon l'icône par défaut du capteur
-hours_to_show: 24      # facultatif, de 1 à 720 h (défaut 24)
-graph_height: 60       # facultatif, hauteur de la courbe en % de la carte (défaut 60)
-color: '#3b82f6'       # facultatif, couleur CSS de la courbe (défaut : couleurs du thème)
-alert_below: 15        # facultatif, couleurs d'alerte sous ce seuil
-show_chevron: true     # facultatif, chevron à droite (défaut false)
+entity: sensor.phone_battery_level
+name: Phone            # optional
+icon: mdi:cellphone    # optional, otherwise the sensor's default icon
+hours_to_show: 24      # optional, 1 to 720 h (default 24)
+graph_height: 60       # optional, curve height in % of the card (default 60)
+color: '#3b82f6'       # optional, CSS color of the curve (default: theme colors)
+alert_below: 15        # optional, alert colors below this threshold
+show_chevron: true     # optional, chevron on the right (default false)
 ```
 
-Un appui ouvre la fenêtre de détails.
+Tapping opens the more-info dialog.
 
 ## `m3-multi-graph-card`
 
-Plusieurs capteurs sur un même graphique, par exemple la température dedans et dehors : les valeurs en haut
-(le premier capteur à gauche, le dernier à droite), les courbes lissées en bas avec un dégradé, sur une échelle
-commune. Un appui sur une valeur ouvre la fenêtre de détails du capteur.
+Several sensors on one graph, for example indoor and outdoor temperature: values at the top
+(first sensor on the left, last one on the right), smoothed curves with a gradient at the bottom, on a shared
+scale. Tapping a value opens that sensor's more-info dialog.
 
 ```yaml
 type: custom:m3-multi-graph-card
-hours_to_show: 24        # facultatif (défaut 24)
-graph_height: 55         # facultatif, hauteur des courbes en % de la carte
-variant: simple          # facultatif : simple (défaut), delta (écart entre les deux premiers) ou extrema (min / max)
+hours_to_show: 24        # optional (default 24)
+graph_height: 55         # optional, curve height in % of the card
+variant: simple          # optional: simple (default), delta (difference between the first two) or extrema (min / max)
 entities:
-  - entity: sensor.maison_temperature
-    name: Intérieur
+  - entity: sensor.house_temperature
+    name: Indoor
     icon: mdi:home-outline
-    color: '#8ec9ff'     # facultatif : CSS ou couleur HA (blue, pink…)
-  - entity: sensor.thermometre_jardin_temperature
-    name: Extérieur
+    color: '#8ec9ff'     # optional: CSS or HA color (blue, pink…)
+  - entity: sensor.garden_temperature
+    name: Outdoor
     icon: mdi:tree-outline
     color: '#fea6ff'
 ```
 
 ## `m3-button-card`
 
-Icône, nom et état de n'importe quelle entité. La carte prend la teinte `primary-container` quand
-l'entité est active (allumée, ouverte, en lecture, en chauffe…) et affiche une alerte quand elle est hors ligne.
+Icon, name and state of any entity. The card takes the `primary-container` tint when the entity is active
+(on, open, playing, heating…) and shows a warning when it is offline.
 
-| Entité | Appui (par défaut) |
+| Entity | Tap (default) |
 |---|---|
-| Lumière, prise, interrupteur, ventilateur, volet, groupe… | Allumer / éteindre |
-| Scène, script | Lancer |
-| Bouton, input_button | Appuyer |
-| Automatisation | Déclencher |
-| Serrure | Verrouiller / déverrouiller |
-| Lecteur multimédia | Lecture / pause |
-| Aspirateur | Démarrer / retour à la base |
-| Autres (capteurs, thermostat…) | Fenêtre de détails |
+| Light, plug, switch, fan, cover, group… | Turn on / off |
+| Scene, script | Run |
+| Button, input_button | Press |
+| Automation | Trigger |
+| Lock | Lock / unlock |
+| Media player | Play / pause |
+| Vacuum | Start / return to dock |
+| Others (sensors, thermostat…) | More-info dialog |
 
-L'appui long ouvre la fenêtre de détails. Les deux se remplacent par n'importe quelle action Home Assistant,
-et un double appui peut en déclencher une troisième.
+Long press opens the more-info dialog. Both can be replaced by any Home Assistant action, and a double tap can
+trigger a third one.
 
 ```yaml
 type: custom:m3-button-card
-entity: light.bureau
-name: Bureau            # facultatif
-icon: mdi:lamp          # facultatif, sinon l'icône de l'entité selon son état
-icon_on: mdi:lamp       # facultatif, icône quand l'entité est active
+entity: light.office
+name: Office            # optional
+icon: mdi:lamp          # optional, otherwise the entity's icon for its state
+icon_on: mdi:lamp       # optional, icon when the entity is active
 icon_off: mdi:lamp-outline
-text_on: Allumée        # facultatif, remplace le texte d'état
-text_off: Éteinte
-show_state: true        # facultatif (défaut true)
-tap_action:             # facultatif, sinon l'action par défaut ci-dessus
+text_on: "On"           # optional, replaces the state text
+text_off: "Off"
+show_state: true        # optional (default true)
+tap_action:             # optional, otherwise the default action above
   action: navigate
-  navigation_path: /lovelace/bureau
-hold_action:            # facultatif, sinon la fenêtre de détails
+  navigation_path: /lovelace/office
+hold_action:            # optional, otherwise the more-info dialog
   action: more-info
-double_tap_action:      # facultatif, désactivé par défaut (l'appui simple attend alors 250 ms)
+double_tap_action:      # optional, disabled by default (a single tap then waits 250 ms)
   action: toggle
-color: teal             # facultatif, couleur (pastel) quand c'est actif, sinon couleur primaire du thème
-active: >-              # facultatif : template, ou true / false ; sinon selon l'état de l'entité
-  {{ '1' in states('input_text.segments_aspirateur').split(',') }}
-chip: >-                # facultatif : pastille à droite (texte ou template), masquée si vide
-  {% set segs = states('input_text.segments_aspirateur').split(',') %}
+color: teal             # optional, (pastel) color when active, otherwise the theme's primary color
+active: >-              # optional: template, or true / false; otherwise based on the entity state
+  {{ '1' in states('input_text.vacuum_segments').split(',') }}
+chip: >-                # optional: chip on the right (text or template), hidden when empty
+  {% set segs = states('input_text.vacuum_segments').split(',') %}
   {{ segs.index('1') + 1 if '1' in segs else '' }}
 ```
 
 ## `m3-scene-card`
 
-Sélecteur de scènes en groupe de boutons Material 3 Expressive : les boutons sont collés en une rangée,
-arrondis aux extrémités, et la **scène active** (la dernière lancée) s'élargit et affiche son nom. Avec `off`,
-un dernier bouton éteint l'entité donnée ; quand elle est éteinte, c'est lui qui est mis en avant.
-Appui long (clic droit) : fenêtre de détails de la scène.
+Scene selector as a Material 3 Expressive button group: the buttons are joined in a row, rounded at both ends,
+and the **active scene** (the last one activated) widens and shows its name. With `off`, a last button turns the
+given entity off; when it is off, that button is highlighted.
+Long press (right click): the scene's more-info dialog.
 
 ```yaml
 type: custom:m3-scene-card
-variant: group           # facultatif : group (défaut), tiles ou carousel
+variant: group           # optional: group (default), tiles or carousel
 scenes:
-  - entity: scene.maison_lumineux
-    name: Lumineux
+  - entity: scene.bright
+    name: Bright
     icon: mdi:brightness-5
-    color: yellow        # facultatif : couleur HA ou CSS
-  - entity: scene.maison_soho
+    color: yellow        # optional: HA or CSS color
+  - entity: scene.relax
     icon: mdi:sofa-outline
     color: purple
-off:                     # facultatif, ou simplement « off: light.tout »
-  entity: light.tout
+off:                     # optional, or simply "off: light.all"
+  entity: light.all
   icon: mdi:moon-new
   color: orange
 ```
 
 ## `m3-media-card`
 
-Lecteur multimédia : pochette, titre et artiste, application ou source, barre de progression (un appui ou un
-glissement pour se déplacer), commandes (aléatoire, précédent, lecture / pause, suivant, répétition) et volume.
-Le fond et l'accent reprennent les couleurs de la pochette (Material You) quand le navigateur peut la lire.
-Seuls les boutons gérés par le lecteur s'affichent ; quand rien ne joue, la carte devient compacte avec un
-bouton marche / arrêt. Un appui sur la partie haute ouvre la fenêtre de détails.
+Media player: artwork, title and artist, app or source, progress bar (tap or drag to seek), controls
+(shuffle, previous, play / pause, next, repeat) and volume. The background and accent use the artwork's colors
+(Material You) when the browser can read it. Only the buttons the player supports are shown; when nothing is
+playing, the card becomes compact with an on / off button. Tapping the top part opens the more-info dialog.
 
 ```yaml
 type: custom:m3-media-card
-entity: media_player.salon
-name: Salon              # facultatif
-show_progress: true      # facultatif (défaut true)
-show_volume: true        # facultatif (défaut true)
-show_source: true        # facultatif, application ou source (défaut true)
-artwork_colors: true     # facultatif, couleurs tirées de la pochette (défaut true)
+entity: media_player.living_room
+name: Living room        # optional
+show_progress: true      # optional (default true)
+show_volume: true        # optional (default true)
+show_source: true        # optional, app or source (default true)
+artwork_colors: true     # optional, colors taken from the artwork (default true)
 ```
 
 ## `m3-person-card`
 
-Accueil : la photo et « Bonjour Laurent ! » (« Bonsoir » à partir de 18 h) pour l'utilisateur connecté, avec son
-état dessous, et les photos des autres personnes à droite. Une personne absente passe en gris ; une pastille
-indique qui est à la maison. Sans photo, l'avatar affiche l'initiale. Un appui ouvre la fenêtre de détails.
+Greeting: the photo and "Bonjour Laurent !" ("Bonsoir" from 6 pm) for the logged-in user, with their state below,
+and the photos of the other people on the right. A person who is away turns grey; a dot shows who is at home.
+Without a photo, the avatar shows the initial. Tapping opens the more-info dialog.
 
 ```yaml
 type: custom:m3-person-card
-persons:                 # facultatif, sinon toutes les personnes sauf vous
+persons:                 # optional, otherwise everyone except you
   - person.laurent
   - person.alicia
-greeting: Salut !        # facultatif, remplace « Bonjour <prénom> ! »
-show_state: true         # facultatif (défaut true)
-show_dot: true           # facultatif, pastille « à la maison » (défaut true)
-background: false        # facultatif, fond de carte (défaut false)
+greeting: Hi there!      # optional, replaces "Bonjour <first name> !"
+show_state: true         # optional (default true)
+show_dot: true           # optional, "at home" dot (default true)
+background: false        # optional, card background (default false)
 ```
 
 ## `m3-map-card`
 
-Carte d'un robot redessinée aux couleurs Material 3. Quand la caméra « carte » fournit un SVG (c'est le cas de
-l'intégration Dreame Mower), la carte retire le fond, le titre et la légende, recolore la pelouse, le tracé de
-tonte, les obstacles et la position du robot, puis recadre sur le terrain. Une autre image s'affiche telle quelle,
-avec des coins arrondis. Une pastille peut afficher l'état du robot et sa batterie.
+A robot's map redrawn in Material 3 colors. When the map camera provides an SVG (as the Dreame Mower integration
+does), the card removes the background, title and legend, recolors the lawn, mowing path, obstacles and robot
+position, then crops to the area. Any other image is shown as is, with rounded corners. A chip can show the
+robot's state and battery.
 
 ```yaml
 type: custom:m3-map-card
-entity: camera.a2_1200_carte
-mower: lawn_mower.a2_1200        # facultatif, état dans la pastille
-battery: sensor.a2_1200_batterie # facultatif
-lawn_color: '#6abf69'            # facultatif
-height: 360                      # facultatif, hauteur maximale en px
+entity: camera.mower_map
+mower: lawn_mower.mower          # optional, state in the chip
+battery: sensor.mower_battery    # optional
+lawn_color: '#6abf69'            # optional
+height: 360                      # optional, maximum height in px
 ```
 
 ## `m3-weather-card`
 
-Météo : température, ciel, ressenti, humidité et vent, sur un fond teinté selon le temps (icônes de nuit après
-le coucher du soleil), puis les prévisions heure par heure ou jour par jour, reçues en direct.
+Weather: temperature, sky, feels-like, humidity and wind, on a background tinted by the weather (night icons after
+sunset), then the hourly or daily forecast, received live.
 
 ```yaml
 type: custom:m3-weather-card
-entity: weather.maison
-forecast_type: hourly    # facultatif : hourly (défaut), daily ou none
-forecast_slots: 8        # facultatif, nombre de prévisions
+entity: weather.home
+forecast_type: hourly    # optional: hourly (default), daily or none
+forecast_slots: 8        # optional, number of forecast slots
 ```
 
 ## `m3-progress-card`
 
-Suivi d'une tâche : état, pourcentage, barre de progression, temps restant et heure de fin (mis à jour en continu).
+Follows a task: state, percentage, progress bar, time left and end time (updated continuously).
 
 ```yaml
 type: custom:m3-progress-card
-entity: sensor.imprimante_etat              # état affiché en sous-titre
-name: Impression
-progress: sensor.imprimante_progression     # facultatif, en %
-end_time: sensor.imprimante_heure_de_fin    # facultatif, horodatage : le temps restant en est déduit
-remaining: sensor.imprimante_temps_restant  # facultatif, sinon une durée (min, h ou s)
-image: image.imprimante_modele              # facultatif, vignette
-color: orange                               # facultatif
+entity: sensor.printer_state              # state shown as the subtitle
+name: Print
+progress: sensor.printer_progress         # optional, in %
+end_time: sensor.printer_end_time         # optional, timestamp: the time left is derived from it
+remaining: sensor.printer_time_left       # optional, otherwise a duration (min, h or s)
+image: image.printer_model                # optional, thumbnail
+color: orange                             # optional
 ```
 
 ## `m3-popup-card`
 
-Popup qui s'ouvre quand l'URL contient son `#hash` : un panneau qui glisse depuis le bas sur mobile, une
-fenêtre centrée sur ordinateur. Elle contient n'importe quelles cartes. Dans le tableau de bord, la carte
-est invisible ; en mode édition, un repère avec un bouton « Ouvrir » permet de la retrouver et de la tester.
+A popup that opens when the URL contains its `#hash`: a sheet sliding up from the bottom on mobile, a centered
+dialog on desktop. It can hold any cards. On the dashboard the card is invisible; in edit mode, a placeholder with
+an "Ouvrir" (open) button lets you find and test it.
 
-Pour l'ouvrir, une action « Naviguer » vers le hash, depuis n'importe quelle carte :
+To open it, use a "Navigate" action to the hash, from any card:
 
 ```yaml
 type: custom:m3-button-card
-entity: light.salon
+entity: light.living_room
 tap_action:
   action: navigate
-  navigation_path: '#salon'
+  navigation_path: '#living-room'
 ```
 
-Elle se ferme en glissant l'en-tête vers le bas (mobile), avec le bouton ×, la touche Échap, le bouton
-retour du téléphone, en appuyant à côté ou après un délai.
+It closes by dragging the header down (mobile), with the × button, the Escape key, the phone's back button,
+by tapping outside or after a delay.
 
 ```yaml
 type: custom:m3-popup-card
-hash: '#salon'
+hash: '#living-room'
 header:
-  name: Salon               # défaut « Popup »
+  name: Living room         # default "Popup"
   icon: mdi:sofa
-  entity: light.salon       # facultatif
-  button_type: switch       # name (défaut), state (nom + état) ou switch (nom + état + interrupteur)
+  entity: light.living_room # optional
+  button_type: switch       # name (default), state (name + state) or switch (name + state + toggle)
   show_header: true
-cards:                      # n'importe quelles cartes
+cards:                      # any cards
   - type: custom:m3-light-slider-card
-    entity: light.salon
+    entity: light.living_room
 settings:
   close_by_clicking_outside: true
-  auto_close: 0             # ms, 0 = jamais
+  auto_close: 0             # ms, 0 = never
   slide_to_close_distance: 100
 style:
   width_desktop: 540        # px
@@ -299,122 +299,127 @@ style:
   backdrop_blur: 6
 ```
 
-L'éditeur visuel règle le hash, l'en-tête, le comportement et l'apparence ; la liste `cards` se modifie en YAML.
+The visual editor handles the hash, header, behavior and style; the `cards` list is edited in YAML.
 
 ## `m3-room-card`
 
-Carte d'une pièce : icône et nom, température en grand et humidité à côté. Le fond prend la couleur
-pastel de la lumière quand elle est allumée, et l'icône devient une flamme rouge quand le chauffage
-est en marche (thermostat sur un autre mode qu'« Arrêt »). Appui long : allumer / éteindre la lumière. Avec une action « Naviguer » vers un
-`#hash`, l'appui ouvre la popup de la pièce.
+A room: icon and name, large temperature with humidity next to it. The background takes the light's pastel color
+when it is on, and the icon becomes a red flame while the heating is on (thermostat in any mode other than off).
+Long press: turn the light on / off. With a "Navigate" action to a `#hash`, a tap opens the room's popup.
 
 ```yaml
 type: custom:m3-room-card
-name: Salon
+name: Living room
 icon: mdi:sofa-outline
-light: light.salon                                 # facultatif, couleur du fond
-climate: climate.salon                             # facultatif, flamme quand le chauffage est en marche
-temperature: sensor.thermometre_salon_temperature  # facultatif, sinon celle du thermostat
-humidity: sensor.thermometre_salon_humidity        # facultatif
-tap_action:                                        # facultatif, sinon la fenêtre de détails
+light: light.living_room                          # optional, background color
+climate: climate.living_room                      # optional, flame while the heating is on
+temperature: sensor.living_room_temperature       # optional, otherwise the thermostat's
+humidity: sensor.living_room_humidity             # optional
+tap_action:                                       # optional, otherwise the more-info dialog
   action: navigate
-  navigation_path: '#salon'
-hold_action:                                       # facultatif, sinon allumer / éteindre la lumière
+  navigation_path: '#living-room'
+hold_action:                                      # optional, otherwise toggle the light
   action: more-info
 ```
 
 ## `m3-list-card`
 
-Liste au style Material 3 Expressive, comme les réglages Android : des lignes empilées qui forment un bloc
-aux grands coins arrondis. Chaque ligne a une icône, un titre, un sous-titre (l'état de l'entité par défaut)
-et, à droite, un interrupteur, l'état ou une flèche. Une ligne active se teinte en couleur primaire.
+A Material 3 Expressive list, like Android settings: stacked rows forming a block with large rounded corners.
+Each row has an icon, a title, a subtitle (the entity state by default) and, on the right, a switch, the state or
+a chevron. An active row is tinted with the primary color.
 
-À droite, `auto` choisit un interrupteur pour ce qui s'allume (lumière, prise…) et une flèche pour une
-action « Naviguer » ou « URL ». L'appui fait l'action par défaut de l'entité (comme `m3-button-card`),
-l'appui long ouvre la fenêtre de détails.
+On the right, `auto` picks a switch for things that turn on (light, plug…) and a chevron for a "Navigate" or
+"URL" action. Tapping runs the entity's default action (like `m3-button-card`); a long press opens the more-info
+dialog.
 
 ```yaml
 type: custom:m3-list-card
-title: Réglages          # facultatif
-radius: large            # facultatif : small, medium, large (défaut) ou un nombre de px
-dynamic: true            # facultatif, teinte les lignes actives (défaut true)
+title: Settings          # optional
+radius: large            # optional: small, medium, large (default) or a number of px
+dynamic: true            # optional, tints active rows (default true)
 rows:
-  - entity: light.salon
-  - entity: switch.prise_cafe
-    name: Machine à café
-  - entity: scene.soiree
-    label: Lancer la scène       # remplace l'état en sous-titre
-  - entity: switch.nettoyage_en_profondeur
-    label_on: En profondeur      # sous-titre selon l'état
+  - entity: light.living_room
+  - entity: switch.coffee_plug
+    name: Coffee machine
+  - entity: scene.evening
+    label: Run the scene         # replaces the state as the subtitle
+  - entity: switch.deep_cleaning
+    label_on: Deep               # subtitle depending on the state
     label_off: Normal
-  - entity: sensor.detecteur_batterie
+  - entity: sensor.detector_battery
     trailing: state
-    alert_below: 20              # ligne en couleurs d'alerte sous cette valeur
-  - entity: sensor.maison_temperature
-    trailing: state              # auto, switch, state, chevron ou none
-  - name: Bureau
+    alert_below: 20              # row in alert colors below this value
+  - entity: sensor.house_temperature
+    trailing: state              # auto, switch, state, chevron or none
+  - name: Office
     icon: mdi:desktop-tower-monitor
     tap_action:
       action: navigate
-      navigation_path: '#bureau'
+      navigation_path: '#office'
 ```
+
+The rows also work with [auto-entities](https://github.com/thomasloven/lovelace-auto-entities), using
+`card_param: rows`.
 
 ## `m3-badge`
 
-Badge à placer en haut d'une vue (Modifier → Badges), au style « chip » de Material 3 : icône et valeur
-sur un fond teinté de la couleur du badge. Sans couleur, il prend celle de l'état, comme les badges natifs.
-`content`, `icon`, `color` et `label` acceptent un template, mis à jour en direct.
+A badge for the top of a view (Edit → Badges), in the Material 3 "chip" style: icon and value on a background
+tinted with the badge's color. Without a color, it uses the state color, like native badges.
+`content`, `icon`, `color` and `label` accept a template, updated live.
 
 ```yaml
 type: custom:m3-badge
-entity: climate.maison
-attribute: current_temperature   # facultatif, affiche un attribut au lieu de l'état
-color: amber                     # facultatif : couleur HA (amber, blue…), hex ou rgb
-icon: mdi:thermometer            # facultatif
-variant: chip                    # facultatif : chip (défaut), pill ou two-line
-label: Chauffage                 # facultatif, deuxième ligne du style two-line
-tap_action:                      # facultatif, sinon la fenêtre de détails
+entity: climate.house
+attribute: current_temperature   # optional, shows an attribute instead of the state
+color: amber                     # optional: HA color (amber, blue…), hex or rgb
+icon: mdi:thermometer            # optional
+variant: chip                    # optional: chip (default), pill or two-line
+label: Heating                   # optional, second line of the two-line style
+tap_action:                      # optional, otherwise the more-info dialog
   action: navigate
-  navigation_path: /dashboard-maison/chauffage
+  navigation_path: /lovelace/heating
 ```
 
-Avec un template, par exemple le temps restant d'un lave-linge :
+With a template, for example a washing machine's remaining time:
 
 ```yaml
 type: custom:m3-badge
-entity: sensor.lave_linge_machine_state
+entity: sensor.washer_machine_state
 content: >
-  {% set t = (states('sensor.lave_linge_completion_time') | as_datetime - now()).total_seconds() %}
+  {% set t = (states('sensor.washer_completion_time') | as_datetime - now()).total_seconds() %}
   {{ t | timestamp_custom('%-H h %-M' if t > 3600 else '%-M min', false) }}
 icon: mdi:washing-machine
 color: blue
 visibility:
   - condition: state
-    entity: sensor.lave_linge_machine_state
+    entity: sensor.washer_machine_state
     state: run
 ```
 
-## Développement
+## Development
 
-### Tester sans publier
+### Testing without publishing
 
-`npm run dev` lance un petit serveur local (sans dépendance) qui sert une version de dev des cartes
-et **recharge automatiquement la page Home Assistant** à chaque sauvegarde dans `src/` (ou dans `build.mjs`).
+`npm run dev` starts a small local server (no dependencies) that serves a dev build of the cards and
+**automatically reloads the Home Assistant page** on every save in `src/` (or in `build.mjs`).
 
-1. `npm run dev` : l'adresse à utiliser s'affiche, par exemple `http://192.168.1.20:5000/material-home-cards-dev.js`
-2. Paramètres → Tableaux de bord → ⋮ → Ressources → ajouter cette adresse en **module JavaScript** (une seule fois)
-3. Dans un tableau de bord de test, utiliser les types `-dev` :
-   `custom:m3-thermostat-card-dev`, `custom:m3-light-slider-card-dev`, `custom:m3-graph-card-dev`, `custom:m3-button-card-dev`, `custom:m3-popup-card-dev`, `custom:m3-room-card-dev`, `custom:m3-list-card-dev`, `custom:m3-scene-card-dev`, `custom:m3-multi-graph-card-dev`, `custom:m3-media-card-dev`, `custom:m3-person-card-dev`, `custom:m3-map-card-dev`, `custom:m3-weather-card-dev`, `custom:m3-progress-card-dev` et `custom:m3-badge-dev`
+1. `npm run dev`: the address to use is printed, for example `http://192.168.1.20:5000/material-home-cards-dev.js`
+2. Settings → Dashboards → ⋮ → Resources → add this address as a **JavaScript module** (once)
+3. In a test dashboard, use the `-dev` types: `custom:m3-thermostat-card-dev`, `custom:m3-light-slider-card-dev`,
+   `custom:m3-graph-card-dev`, `custom:m3-button-card-dev`, `custom:m3-popup-card-dev`, `custom:m3-room-card-dev`,
+   `custom:m3-list-card-dev`, `custom:m3-scene-card-dev`, `custom:m3-multi-graph-card-dev`,
+   `custom:m3-media-card-dev`, `custom:m3-person-card-dev`, `custom:m3-map-card-dev`,
+   `custom:m3-weather-card-dev`, `custom:m3-progress-card-dev` and `custom:m3-badge-dev`
 
-Les types `-dev` cohabitent avec la version installée par HACS, qui reste intacte. Le port se change avec
-`PORT=5001 npm run dev`. Si Home Assistant est ouvert en **https**, le navigateur bloque une ressource en http :
-tester depuis l'adresse locale en http de Home Assistant.
+The `-dev` types coexist with the version installed by HACS, which stays untouched. Change the port with
+`PORT=5001 npm run dev`. If Home Assistant is opened over **https**, the browser blocks an http resource:
+test from Home Assistant's local http address.
 
-### Publier
+### Publishing
 
-Les sources sont dans `src/`, une carte par fichier. `npm run build` (ou `node build.mjs`)
-les assemble dans `dist/material-home-cards.js`, le fichier chargé par HACS : pensez à le
-reconstruire et à le committer avant chaque release.
+The sources live in `src/`, one card per file, with shared code in `src/shared/`. `npm run build`
+(or `node build.mjs`) bundles them into `dist/material-home-cards.js`, the file loaded by HACS: rebuild and commit
+it before every release.
 
-Pour publier une version : incrémenter `version` dans `package.json`, `npm run build`,
-committer, puis créer une release GitHub `vX.Y.Z` — HACS propose alors la mise à jour.
+To publish a version: bump `version` in `package.json`, run `npm run build`, commit, then create a GitHub release
+`vX.Y.Z` — HACS then offers the update.

@@ -1,7 +1,7 @@
 {
   "name": "material-home-cards",
   "version": "1.16.0",
-  "description": "Cartes Lovelace Material 3 pour Home Assistant : slider de lumière, thermostat, graphiques, bouton, popup, pièce, liste, scènes, média, personnes, carte, météo, progression et badge",
+  "description": "Material Design 3 Lovelace cards for Home Assistant: light slider, thermostat, graphs, buttons, popup, rooms, lists, scenes, media, people, robot map, weather, progress and badges",
   "type": "module",
   "private": true,
   "scripts": {
