@@ -38,8 +38,9 @@ icon: mdi:lamp      # facultatif
 
 ## `m3-thermostat-card`
 
-Température actuelle, consigne avec boutons − / +, bouton marche/arrêt. La consigne affichée
-change dès l'appui ; une seule commande part 0,6 s après le dernier appui.
+Consigne en grand entre deux boutons − / +, mode et température actuelle en dessous
+(« Chauffage • 23,1 °C »). La consigne affichée change dès l'appui ; une seule commande part
+0,6 s après le dernier appui.
 
 ```yaml
 type: custom:m3-thermostat-card
@@ -47,10 +48,10 @@ entity: climate.salon
 name: Salon          # facultatif
 step: 0.5            # facultatif, pas des boutons − / + (défaut 0.5)
 hvac_mode: heat      # facultatif, mode utilisé par « Marche » (défaut : heat, sinon le premier mode disponible)
-icon: mdi:radiator   # facultatif, sinon l'icône suit l'état (flamme quand ça chauffe)
+icon: mdi:radiator   # facultatif, sinon l'icône suit le mode (flamme en chauffage, power à l'arrêt)
 ```
 
-Un appui sur la carte (hors boutons) ouvre la fenêtre de détails.
+L'icône en haut à gauche allume / éteint ; un appui ailleurs sur la carte (ou sur le chevron) ouvre la fenêtre de détails.
 
 ## Développement
 

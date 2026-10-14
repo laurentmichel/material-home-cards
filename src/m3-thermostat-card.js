@@ -1,14 +1,12 @@
-// m3-thermostat-card — carte thermostat Material 3 : température actuelle, consigne réglable
-// par pas avec affichage immédiat, bouton marche/arrêt.
+// m3-thermostat-card — carte thermostat Material 3 : consigne en grand entre deux boutons − / +
+// avec affichage immédiat, mode et température actuelle en dessous.
 const STYLE = `
 :host { display: block; height: 100%; }
 ha-card {
-  height: 100%; box-sizing: border-box; padding: 20px;
+  height: 100%; box-sizing: border-box; padding: 16px 20px 20px;
   border-radius: 28px; border: none; box-shadow: none;
   background: var(--m3-bg); color: var(--m3-fg);
-  display: grid; grid-template-columns: 48px 1fr auto;
-  grid-template-areas: "icon name mode" "temp temp temp" "minus target plus";
-  column-gap: 12px; row-gap: 16px; align-items: center;
+  display: flex; flex-direction: column; gap: 4px;
   cursor: pointer; user-select: none; -webkit-user-select: none;
   transition: background 300ms ease, color 300ms ease;
 }
@@ -17,55 +15,48 @@ button {
   cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
 button:focus-visible { outline: 2px solid var(--m3-primary); outline-offset: 2px; }
-.icon {
-  grid-area: icon; width: 48px; height: 48px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  background: var(--m3-icon-bg); color: var(--m3-icon-fg); transition: background 300ms ease;
+.header { display: flex; align-items: center; gap: 12px; min-height: 32px; }
+.power {
+  width: 32px; height: 32px; margin-left: -6px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; flex: none;
 }
-.icon ha-icon { --mdc-icon-size: 24px; }
-.title { grid-area: name; min-width: 0; }
-.name { font-size: 1rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.status { font-size: 0.8125rem; opacity: 0.75; }
-.mode {
-  grid-area: mode; display: flex; align-items: center; gap: 6px;
-  height: 36px; padding: 0 14px 0 10px; border-radius: 18px;
-  font-size: 0.875rem; font-weight: 500;
-  border: var(--m3-chip-border); background: var(--m3-chip-bg); color: var(--m3-chip-fg);
-  transition: background 300ms ease;
-}
-.mode ha-icon { --mdc-icon-size: 18px; }
-.temp { grid-area: temp; font-size: 3.5rem; line-height: 1; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
-.temp .unit { font-size: 1.5rem; vertical-align: top; margin-left: 2px; }
+.power ha-icon { --mdc-icon-size: 20px; }
+.name { flex: 1; min-width: 0; font-size: 1rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chevron { --mdc-icon-size: 22px; opacity: 0.9; flex: none; }
+.controls { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .step {
-  width: 48px; height: 48px; border-radius: 50%;
+  width: 80px; height: 52px; border-radius: 26px; flex: none;
   display: flex; align-items: center; justify-content: center;
   background: var(--md-sys-color-secondary-container, rgba(127, 127, 127, 0.15));
   color: var(--md-sys-color-on-secondary-container, var(--primary-text-color));
   transition: transform 100ms ease;
 }
-.step:active { transform: scale(0.92); }
-.step ha-icon { --mdc-icon-size: 24px; }
-.minus { grid-area: minus; justify-self: start; }
-.plus { grid-area: plus; justify-self: end; }
-.target { grid-area: target; justify-self: center; font-size: 1rem; font-weight: 500; font-variant-numeric: tabular-nums; }
-:host([no-target]) .step, :host([no-target]) .target { visibility: hidden; }
+.step:active { transform: scale(0.94); }
+.step ha-icon { --mdc-icon-size: 26px; }
+.target {
+  font-size: 4.5rem; font-weight: 400; line-height: 1.1; letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums; text-align: center;
+}
+.status { text-align: center; font-size: 0.875rem; opacity: 0.85; }
+:host([no-target]) .step { visibility: hidden; }
+:host([off]) .target { opacity: 0.6; }
 :host([unavailable]) ha-card { opacity: 0.5; pointer-events: none; }
 `;
 
 const SURFACE = 'var(--md-sys-color-surface-container-high, var(--ha-card-background, var(--card-background-color)))';
 const ON_SURFACE = 'var(--md-sys-color-on-surface, var(--primary-text-color))';
 const PRIMARY = 'var(--md-sys-color-primary, var(--primary-color))';
-const ON_PRIMARY = 'var(--md-sys-color-on-primary, #fff)';
 const SEND_DELAY = 600;
 const PENDING_TTL = 8000;
 
-const ACTIONS = {
-  heating: { label: 'Chauffe', icon: 'mdi:fire' },
-  cooling: { label: 'Refroidit', icon: 'mdi:snowflake' },
-  drying: { label: 'Déshumidifie', icon: 'mdi:water-percent' },
-  fan: { label: 'Ventile', icon: 'mdi:fan' },
-  idle: { label: 'En veille', icon: 'mdi:radiator' },
-  off: { label: 'Éteint', icon: 'mdi:radiator' },
+const MODES = {
+  heat: { label: 'Chauffage', icon: 'mdi:fire' },
+  cool: { label: 'Climatisation', icon: 'mdi:snowflake' },
+  heat_cool: { label: 'Auto', icon: 'mdi:sun-snowflake-variant' },
+  auto: { label: 'Auto', icon: 'mdi:thermostat-auto' },
+  dry: { label: 'Déshumidification', icon: 'mdi:water-percent' },
+  fan_only: { label: 'Ventilation', icon: 'mdi:fan' },
+  off: { label: 'Arrêt', icon: 'mdi:power' },
 };
 
 const fmt = (n) => Number(n).toLocaleString('fr-FR', { maximumFractionDigits: 1 });
@@ -84,7 +75,7 @@ class M3ThermostatCard extends HTMLElement {
     return { entity: Object.keys(hass.states).find((e) => e.startsWith('climate.')) || 'climate.example' };
   }
 
-  getCardSize() { return 4; }
+  getCardSize() { return 3; }
 
   getGridOptions() { return { columns: 12, rows: 'auto', min_columns: 6 }; }
 
@@ -100,26 +91,28 @@ class M3ThermostatCard extends HTMLElement {
     const root = this.attachShadow({ mode: 'open' });
     root.innerHTML = `<style>${STYLE}</style>
       <ha-card>
-        <div class="icon"><ha-icon></ha-icon></div>
-        <div class="title"><div class="name"></div><div class="status"></div></div>
-        <button class="mode"><ha-icon icon="mdi:power"></ha-icon><span></span></button>
-        <div class="temp"></div>
-        <button class="step minus" aria-label="Baisser la consigne"><ha-icon icon="mdi:minus"></ha-icon></button>
-        <div class="target"></div>
-        <button class="step plus" aria-label="Monter la consigne"><ha-icon icon="mdi:plus"></ha-icon></button>
+        <div class="header">
+          <button class="power" aria-label="Allumer / éteindre"><ha-icon></ha-icon></button>
+          <div class="name"></div>
+          <ha-icon class="chevron" icon="mdi:chevron-right"></ha-icon>
+        </div>
+        <div class="controls">
+          <button class="step minus" aria-label="Baisser la consigne"><ha-icon icon="mdi:minus"></ha-icon></button>
+          <div class="target"></div>
+          <button class="step plus" aria-label="Monter la consigne"><ha-icon icon="mdi:plus"></ha-icon></button>
+        </div>
+        <div class="status"></div>
       </ha-card>`;
     this._card = root.querySelector('ha-card');
     this._els = {
-      icon: root.querySelector('.icon ha-icon'),
+      power: root.querySelector('.power'),
+      icon: root.querySelector('.power ha-icon'),
       name: root.querySelector('.name'),
-      status: root.querySelector('.status'),
-      mode: root.querySelector('.mode'),
-      modeLabel: root.querySelector('.mode span'),
-      temp: root.querySelector('.temp'),
       target: root.querySelector('.target'),
+      status: root.querySelector('.status'),
     };
     this._card.addEventListener('click', () => this._fire('hass-more-info', { entityId: this._config.entity }));
-    this._els.mode.addEventListener('click', (e) => { e.stopPropagation(); this._toggleMode(); });
+    this._els.power.addEventListener('click', (e) => { e.stopPropagation(); this._toggleMode(); });
     root.querySelector('.minus').addEventListener('click', (e) => { e.stopPropagation(); this._step(-1); });
     root.querySelector('.plus').addEventListener('click', (e) => { e.stopPropagation(); this._step(1); });
   }
@@ -141,29 +134,23 @@ class M3ThermostatCard extends HTMLElement {
     const a = s.attributes;
     const unavailable = s.state === 'unavailable' || s.state === 'unknown';
     const on = !unavailable && s.state !== 'off';
-    const action = ACTIONS[on ? a.hvac_action : 'off'] ?? ACTIONS.idle;
+    const mode = MODES[s.state] ?? { label: s.state, icon: 'mdi:thermostat' };
     const target = this._target();
 
     this.toggleAttribute('unavailable', unavailable);
+    this.toggleAttribute('off', !on);
     this.toggleAttribute('no-target', target == null);
     this._els.name.textContent = this._config.name ?? a.friendly_name ?? this._config.entity;
-    this._els.status.textContent = unavailable ? 'Indisponible' : action.label;
-    this._els.icon.icon = this._config.icon ?? action.icon;
-    this._els.modeLabel.textContent = on ? 'Marche' : 'Arrêt';
-    this._els.temp.innerHTML = a.current_temperature == null
-      ? '—'
-      : `${fmt(a.current_temperature)}<span class="unit">°C</span>`;
-    this._els.target.textContent = target == null ? '' : `Consigne ${fmt(target)}°`;
+    this._els.icon.icon = this._config.icon ?? mode.icon;
+    this._els.target.textContent = target == null ? '—' : fmt(target);
+    const parts = [unavailable ? 'Indisponible' : mode.label];
+    if (a.current_temperature != null) parts.push(`${fmt(a.current_temperature)} °C`);
+    this._els.status.textContent = parts.join(' • ');
 
     const st = this._card.style;
     st.setProperty('--m3-primary', PRIMARY);
     st.setProperty('--m3-bg', on ? 'var(--md-sys-color-primary-container, rgba(var(--rgb-primary-color), 0.18))' : SURFACE);
     st.setProperty('--m3-fg', on ? 'var(--md-sys-color-on-primary-container, var(--primary-text-color))' : ON_SURFACE);
-    st.setProperty('--m3-icon-bg', on ? PRIMARY : 'var(--md-sys-color-surface-container-highest, rgba(127, 127, 127, 0.15))');
-    st.setProperty('--m3-icon-fg', on ? ON_PRIMARY : 'inherit');
-    st.setProperty('--m3-chip-bg', on ? PRIMARY : 'transparent');
-    st.setProperty('--m3-chip-fg', on ? ON_PRIMARY : 'inherit');
-    st.setProperty('--m3-chip-border', on ? 'none' : '1px solid var(--md-sys-color-outline, rgba(127, 127, 127, 0.5))');
   }
 
   // Chaque appui part de la dernière valeur affichée ; une seule commande part après le dernier appui.
