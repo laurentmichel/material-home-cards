@@ -250,6 +250,8 @@ class M3PopupCard extends HTMLElement {
     this._manual = window.location.hash !== this._config.hash;
     const popup = document.createElement('m3-popup-overlay');
     this._popup = popup;
+    this._openedAt = Date.now();
+    this._backdropDown = false;
     const root = popup.attachShadow({ mode: 'open' });
     root.innerHTML = `<style>${POPUP_STYLE}</style>
       <div class="backdrop"></div>
@@ -271,14 +273,24 @@ class M3PopupCard extends HTMLElement {
     popup.toggleAttribute('mobile', isMobile());
     popup.toggleAttribute('no-header', !this._header.show_header);
 
+    // Le même clic fantôme peut tomber sur une carte de la popup (bouton du thermostat...) : on l'absorbe.
+    popup.addEventListener('click', (e) => {
+      if (Date.now() - this._openedAt < 350) { e.stopPropagation(); e.preventDefault(); }
+    }, true);
     for (const type of FORWARDED_EVENTS) {
       popup.addEventListener(type, (e) => {
         e.stopPropagation();
         this.dispatchEvent(new CustomEvent(type, { detail: e.detail, bubbles: true, composed: true }));
       });
     }
-    root.querySelector('.backdrop').addEventListener('click', () => {
-      if (this._settings.close_by_clicking_outside) this._close();
+    // Sur écran tactile, le « click » qui suit l'appui sur le bouton d'ouverture retombe sur le fond
+    // qui vient d'apparaître : on ne ferme que si l'appui a commencé sur le fond, et pas juste après l'ouverture.
+    const backdrop = root.querySelector('.backdrop');
+    backdrop.addEventListener('pointerdown', () => { this._backdropDown = Date.now() - this._openedAt > 300; });
+    backdrop.addEventListener('click', () => {
+      const fromBackdrop = this._backdropDown;
+      this._backdropDown = false;
+      if (fromBackdrop && this._settings.close_by_clicking_outside) this._close();
     });
     root.querySelector('.close').addEventListener('click', () => this._close());
     root.querySelector('.switch').addEventListener('click', () => {
