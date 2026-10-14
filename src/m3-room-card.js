@@ -1,5 +1,5 @@
 // m3-room-card — carte pièce Material 3 : nom, icône, température et humidité de la pièce.
-// Le fond prend la couleur pastel de la lumière quand elle est allumée, l'icône devient une flamme rouge pendant la chauffe.
+// Le fond prend la couleur pastel de la lumière quand elle est allumée, l'icône devient une flamme rouge quand le chauffage est en marche.
 const STYLE = `
 :host { display: block; height: 100%; }
 ha-card {
@@ -64,7 +64,7 @@ class M3RoomCardEditor extends M3CardEditor {
 
   static helpers = {
     light: 'Le fond prend sa couleur quand elle est allumée',
-    climate: 'L’icône devient une flamme pendant la chauffe ; sa température sert si aucun capteur n’est choisi',
+    climate: 'L’icône devient une flamme quand le chauffage est en marche ; sa température sert si aucun capteur n’est choisi',
     tap_action: 'Par exemple « Naviguer » vers #salon pour ouvrir une popup. Vide : fenêtre de détails',
     hold_action: 'Vide : allumer / éteindre la lumière',
   };
@@ -148,9 +148,8 @@ class M3RoomCard extends HTMLElement {
     this._els.hum.textContent = hum != null ? `${this._number(hum)} %` : '';
     this.toggleAttribute('no-climate', temp == null && hum == null);
 
-    // Chauffe en cours : hvac_action si le thermostat le fournit, sinon le mode « heat ».
-    const action = climate?.attributes.hvac_action;
-    const heating = climate && (action ? action === 'heating' : climate.state === 'heat');
+    // Chauffage en marche : le thermostat n'est pas éteint, même s'il ne chauffe pas à cet instant.
+    const heating = climate && !['off', 'unavailable', 'unknown'].includes(climate.state);
     this._els.icon.icon = heating ? 'mdi:fire' : c.icon ?? 'mdi:home-outline';
 
     const st = this._card.style;
@@ -164,7 +163,7 @@ class M3RoomCard extends HTMLElement {
       st.setProperty('--m3-bg', SURFACE);
     }
     st.setProperty('--m3-fg', fg);
-    // En chauffe, la flamme prend la couleur d'erreur du thème (rouge), plus foncée sur un fond clair.
+    // Chauffage en marche : la flamme prend la couleur d'erreur du thème (rouge), plus foncée sur un fond clair.
     const heat = fg === '#1c1b1f' ? '#ba1a1a' : 'var(--md-sys-color-error, #ffb4ab)';
     st.setProperty('--m3-icon-fg', heating ? heat : fg);
   }

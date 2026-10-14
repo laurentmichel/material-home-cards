@@ -166,8 +166,8 @@ L'éditeur visuel règle le hash, l'en-tête, le comportement et l'apparence ; l
 ## `m3-room-card`
 
 Carte d'une pièce : icône et nom, température en grand et humidité à côté. Le fond prend la couleur
-pastel de la lumière quand elle est allumée, et l'icône devient une flamme rouge quand le radiateur chauffe
-(`hvac_action: heating`). Appui long : allumer / éteindre la lumière. Avec une action « Naviguer » vers un
+pastel de la lumière quand elle est allumée, et l'icône devient une flamme rouge quand le chauffage
+est en marche (thermostat sur un autre mode qu'« Arrêt »). Appui long : allumer / éteindre la lumière. Avec une action « Naviguer » vers un
 `#hash`, l'appui ouvre la popup de la pièce.
 
 ```yaml
@@ -175,7 +175,7 @@ type: custom:m3-room-card
 name: Salon
 icon: mdi:sofa-outline
 light: light.salon                                 # facultatif, couleur du fond
-climate: climate.salon                             # facultatif, flamme pendant la chauffe
+climate: climate.salon                             # facultatif, flamme quand le chauffage est en marche
 temperature: sensor.thermometre_salon_temperature  # facultatif, sinon celle du thermostat
 humidity: sensor.thermometre_salon_humidity        # facultatif
 tap_action:                                        # facultatif, sinon la fenêtre de détails
