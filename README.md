@@ -10,6 +10,8 @@ et retombent sur les couleurs Home Assistant sinon.
 | Slider de lumière teinté avec la couleur de la lumière | `custom:m3-light-slider-card` |
 | Thermostat avec consigne réglable | `custom:m3-thermostat-card` |
 | Capteur avec courbe d'historique | `custom:m3-graph-card` |
+| Plusieurs capteurs sur un même graphique | `custom:m3-multi-graph-card` |
+| Sélecteur de scènes | `custom:m3-scene-card` |
 | Bouton pour n'importe quelle entité | `custom:m3-button-card` |
 | Popup ouverte par un `#hash` | `custom:m3-popup-card` |
 | Pièce : température, humidité, lumière et chauffage | `custom:m3-room-card` |
@@ -82,6 +84,28 @@ show_chevron: true     # facultatif, chevron à droite (défaut false)
 
 Un appui ouvre la fenêtre de détails.
 
+## `m3-multi-graph-card`
+
+Plusieurs capteurs sur un même graphique, par exemple la température dedans et dehors : les valeurs en haut
+(le premier capteur à gauche, le dernier à droite), les courbes lissées en bas avec un dégradé, sur une échelle
+commune. Un appui sur une valeur ouvre la fenêtre de détails du capteur.
+
+```yaml
+type: custom:m3-multi-graph-card
+hours_to_show: 24        # facultatif (défaut 24)
+graph_height: 55         # facultatif, hauteur des courbes en % de la carte
+variant: simple          # facultatif : simple (défaut), delta (écart entre les deux premiers) ou extrema (min / max)
+entities:
+  - entity: sensor.maison_temperature
+    name: Intérieur
+    icon: mdi:home-outline
+    color: '#8ec9ff'     # facultatif : CSS ou couleur HA (blue, pink…)
+  - entity: sensor.thermometre_jardin_temperature
+    name: Extérieur
+    icon: mdi:tree-outline
+    color: '#fea6ff'
+```
+
 ## `m3-button-card`
 
 Icône, nom et état de n'importe quelle entité. La carte prend la teinte `primary-container` quand
@@ -118,6 +142,30 @@ hold_action:            # facultatif, sinon la fenêtre de détails
   action: more-info
 double_tap_action:      # facultatif, désactivé par défaut (l'appui simple attend alors 250 ms)
   action: toggle
+```
+
+## `m3-scene-card`
+
+Sélecteur de scènes en groupe de boutons Material 3 Expressive : les boutons sont collés en une rangée,
+arrondis aux extrémités, et la **scène active** (la dernière lancée) s'élargit et affiche son nom. Avec `off`,
+un dernier bouton éteint l'entité donnée ; quand elle est éteinte, c'est lui qui est mis en avant.
+Appui long (clic droit) : fenêtre de détails de la scène.
+
+```yaml
+type: custom:m3-scene-card
+variant: group           # facultatif : group (défaut), tiles ou carousel
+scenes:
+  - entity: scene.maison_lumineux
+    name: Lumineux
+    icon: mdi:brightness-5
+    color: yellow        # facultatif : couleur HA ou CSS
+  - entity: scene.maison_soho
+    icon: mdi:sofa-outline
+    color: purple
+off:                     # facultatif, ou simplement « off: light.tout »
+  entity: light.tout
+  icon: mdi:moon-new
+  color: orange
 ```
 
 ## `m3-popup-card`
@@ -261,7 +309,7 @@ et **recharge automatiquement la page Home Assistant** à chaque sauvegarde dans
 1. `npm run dev` : l'adresse à utiliser s'affiche, par exemple `http://192.168.1.20:5000/material-home-cards-dev.js`
 2. Paramètres → Tableaux de bord → ⋮ → Ressources → ajouter cette adresse en **module JavaScript** (une seule fois)
 3. Dans un tableau de bord de test, utiliser les types `-dev` :
-   `custom:m3-thermostat-card-dev`, `custom:m3-light-slider-card-dev`, `custom:m3-graph-card-dev`, `custom:m3-button-card-dev`, `custom:m3-popup-card-dev`, `custom:m3-room-card-dev`, `custom:m3-list-card-dev` et `custom:m3-badge-dev`
+   `custom:m3-thermostat-card-dev`, `custom:m3-light-slider-card-dev`, `custom:m3-graph-card-dev`, `custom:m3-button-card-dev`, `custom:m3-popup-card-dev`, `custom:m3-room-card-dev`, `custom:m3-list-card-dev`, `custom:m3-scene-card-dev`, `custom:m3-multi-graph-card-dev` et `custom:m3-badge-dev`
 
 Les types `-dev` cohabitent avec la version installée par HACS, qui reste intacte. Le port se change avec
 `PORT=5001 npm run dev`. Si Home Assistant est ouvert en **https**, le navigateur bloque une ressource en http :
