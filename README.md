@@ -147,6 +147,9 @@ double_tap_action:      # facultatif, désactivé par défaut (l'appui simple at
 color: teal             # facultatif, couleur (pastel) quand c'est actif, sinon couleur primaire du thème
 active: >-              # facultatif : template, ou true / false ; sinon selon l'état de l'entité
   {{ '1' in states('input_text.segments_aspirateur').split(',') }}
+chip: >-                # facultatif : pastille à droite (texte ou template), masquée si vide
+  {% set segs = states('input_text.segments_aspirateur').split(',') %}
+  {{ segs.index('1') + 1 if '1' in segs else '' }}
 ```
 
 ## `m3-scene-card`

@@ -1,5 +1,5 @@
-/*! Material Home Cards v1.13.0 — https://github.com/laurentmichel/material-home-cards */
-console.info('%c MATERIAL-HOME-CARDS %c v1.13.0 ', 'color:#fff;background:#6750a4;font-weight:700', 'color:#6750a4;background:#eaddff');
+/*! Material Home Cards v1.14.0 — https://github.com/laurentmichel/material-home-cards */
+console.info('%c MATERIAL-HOME-CARDS %c v1.14.0 ', 'color:#fff;background:#6750a4;font-weight:700', 'color:#6750a4;background:#eaddff');
 
 // ---- shared/color.js ----
 // Couleurs nommées de HA (amber, blue...) → variables du thème ; le reste (hex, rgb) tel quel.
@@ -423,6 +423,13 @@ ha-card:active { transform: scale(0.98); }
 .state { ${STATE_FONT} white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 :host([no-state]) .state { display: none; }
 .badge { flex: none; --mdc-icon-size: 20px; }
+/* Pastille à droite (numéro d'ordre, compteur...) : inversée par rapport à la carte. */
+.chip {
+  flex: none; min-width: 28px; height: 28px; box-sizing: border-box; padding: 0 8px; border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--m3-fg); color: var(--m3-chip-fg, var(--md-sys-color-surface, #fff)); font-size: 13px; font-weight: 700;
+}
+.chip:empty { display: none; }
 :host(:not([offline])) .badge { display: none; }
 :host([offline]) ha-card { opacity: 0.6; }
 `;
@@ -455,6 +462,7 @@ class M3ButtonCardEditor extends M3CardEditor {
         { name: 'show_state', selector: { boolean: {} } },
         { name: 'color', selector: { ui_color: {} } },
         { name: 'active', selector: { template: {} } },
+        { name: 'chip', selector: { template: {} } },
       ],
     },
     {
@@ -470,7 +478,7 @@ class M3ButtonCardEditor extends M3CardEditor {
     entity: 'Entité', name: 'Nom', icon: 'Icône', icon_on: 'Icône allumé', icon_off: 'Icône éteint',
     text_on: 'Texte allumé', text_off: 'Texte éteint', show_state: 'Afficher l’état',
     tap_action: 'Appui', hold_action: 'Appui long', double_tap_action: 'Double appui',
-    color: 'Couleur quand c’est actif', active: 'Actif si (template)',
+    color: 'Couleur quand c’est actif', active: 'Actif si (template)', chip: 'Pastille à droite (texte ou template)',
   };
 
   static helpers = {
@@ -496,7 +504,7 @@ class M3ButtonCard extends HTMLElement {
   setConfig(config) {
     if (!config || !config.entity) throw new Error('m3-button-card : « entity » est obligatoire');
     this._config = { show_state: true, ...config };
-    this._activeResult = undefined;
+    this._tpl = {};
     if (!this.shadowRoot) this._build();
     this._resubscribe();
     if (this._hass) this._render();
@@ -506,17 +514,18 @@ class M3ButtonCard extends HTMLElement {
 
   disconnectedCallback() { unsubscribeAll(this._unsubs); this._unsubs = []; }
 
-  // `active` peut être un template : Home Assistant renvoie son résultat à chaque changement.
+  // `active` et `chip` peuvent être des templates : Home Assistant renvoie leur résultat à chaque changement.
   _resubscribe() {
     unsubscribeAll(this._unsubs);
     this._unsubs = [];
     const c = this._config;
-    if (!this._hass?.connection || !c || !this.isConnected || !isTemplate(c.active)) return;
+    if (!this._hass?.connection || !c || !this.isConnected) return;
     const variables = { config: c, user: this._hass.user?.name, entity: c.entity };
-    this._unsubs = [subscribeTemplate(this._hass, c.active, variables, (result) => {
-      this._activeResult = isTruthy(result);
-      this._render();
-    })];
+    this._unsubs = ['active', 'chip'].filter((key) => isTemplate(c[key])).map((key) =>
+      subscribeTemplate(this._hass, c[key], variables, (result) => {
+        this._tpl[key] = result;
+        this._render();
+      }));
   }
 
   getCardSize() { return 2; }
@@ -539,6 +548,7 @@ class M3ButtonCard extends HTMLElement {
       <ha-card>
         <div class="icon"><ha-state-icon></ha-state-icon></div>
         <div class="text"><div class="name"></div><div class="state"></div></div>
+        <span class="chip"></span>
         <ha-icon class="badge" icon="mdi:alert-circle-outline" title="Hors ligne"></ha-icon>
       </ha-card>`;
     this._card = root.querySelector('ha-card');
@@ -546,6 +556,7 @@ class M3ButtonCard extends HTMLElement {
       icon: root.querySelector('ha-state-icon'),
       name: root.querySelector('.name'),
       state: root.querySelector('.state'),
+      chip: root.querySelector('.chip'),
     };
     this._card.addEventListener('pointerdown', (e) => this._onDown(e));
     this._card.addEventListener('pointerup', () => this._onUp());
@@ -560,7 +571,7 @@ class M3ButtonCard extends HTMLElement {
     const s = this._stateObj;
     const offline = !s || s.state === 'unavailable' || s.state === 'unknown';
     // `active` : template, booléen, ou à défaut l'état de l'entité.
-    const forced = isTemplate(c.active) ? !!this._activeResult : c.active != null ? isTruthy(c.active) : null;
+    const forced = isTemplate(c.active) ? isTruthy(this._tpl.active) : c.active != null ? isTruthy(c.active) : null;
     const active = !offline && (forced ?? isActive(s));
 
     this.toggleAttribute('offline', offline);
@@ -573,6 +584,7 @@ class M3ButtonCard extends HTMLElement {
       icon: (active ? c.icon_on : c.icon_off) ?? c.icon,
     });
     this._els.state.textContent = text ?? '';
+    this._els.chip.textContent = (isTemplate(c.chip) ? this._tpl.chip : c.chip) ?? '';
 
     const st = this._card.style;
     if (active && c.color) {
@@ -580,6 +592,7 @@ class M3ButtonCard extends HTMLElement {
       st.setProperty('--m3-bg', `color-mix(in srgb, ${cssColor(c.color)} 62%, white)`);
       st.setProperty('--m3-fg', '#1c1b1f');
       st.setProperty('--m3-icon-fg', '#1c1b1f');
+      st.setProperty('--m3-chip-fg', '#ffffff');
       return;
     }
     st.setProperty('--m3-bg', active ? 'var(--md-sys-color-primary-container, rgba(var(--rgb-primary-color), 0.18))' : SURFACE);
