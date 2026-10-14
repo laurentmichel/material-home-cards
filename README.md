@@ -144,6 +144,9 @@ hold_action:            # facultatif, sinon la fenêtre de détails
   action: more-info
 double_tap_action:      # facultatif, désactivé par défaut (l'appui simple attend alors 250 ms)
   action: toggle
+color: teal             # facultatif, couleur (pastel) quand c'est actif, sinon couleur primaire du thème
+active: >-              # facultatif : template, ou true / false ; sinon selon l'état de l'entité
+  {{ '1' in states('input_text.segments_aspirateur').split(',') }}
 ```
 
 ## `m3-scene-card`
@@ -292,6 +295,9 @@ rows:
     name: Machine à café
   - entity: scene.soiree
     label: Lancer la scène       # remplace l'état en sous-titre
+  - entity: switch.nettoyage_en_profondeur
+    label_on: En profondeur      # sous-titre selon l'état
+    label_off: Normal
   - entity: sensor.maison_temperature
     trailing: state              # auto, switch, state, chevron ou none
   - name: Bureau

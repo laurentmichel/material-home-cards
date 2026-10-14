@@ -70,6 +70,8 @@ class M3ListCardEditor extends M3CardEditor {
             entity: { label: 'Entité', selector: { entity: {} } },
             name: { label: 'Nom', selector: { text: {} } },
             label: { label: 'Sous-titre (vide : état de l’entité)', selector: { text: {} } },
+            label_on: { label: 'Sous-titre quand c’est actif', selector: { text: {} } },
+            label_off: { label: 'Sous-titre quand c’est inactif', selector: { text: {} } },
             icon: { label: 'Icône', selector: { icon: {} } },
             trailing: {
               label: 'À droite', selector: {
@@ -182,7 +184,8 @@ class M3ListCard extends HTMLElement {
     r.name.textContent = row.name ?? s?.attributes.friendly_name ?? row.entity;
     Object.assign(r.icon, { hass: this._hass, stateObj: s, icon: row.icon });
     // Sous-titre : celui de la config, sinon l'état (sauf s'il est déjà affiché à droite).
-    r.label.textContent = row.label ?? (trailing === 'state' ? '' : this._stateText(s, offline) ?? '');
+    const custom = (active ? row.label_on : offline ? null : row.label_off) ?? row.label;
+    r.label.textContent = custom ?? (trailing === 'state' ? '' : this._stateText(s, offline) ?? '');
 
     if (r.kind !== trailing) {
       r.kind = trailing;

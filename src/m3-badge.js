@@ -46,7 +46,6 @@ const STYLE = `
 const VARIANTS = ['chip', 'pill', 'two-line'];
 // Clés acceptant un template Jinja (rendu par Home Assistant, mis à jour en direct).
 const TEMPLATE_KEYS = ['content', 'icon', 'color', 'label'];
-const isTemplate = (v) => typeof v === 'string' && /\{[{%]/.test(v);
 
 class M3BadgeEditor extends M3CardEditor {
   static schema = [
@@ -145,24 +144,16 @@ class M3Badge extends HTMLElement {
   _resubscribe() {
     this._unsubscribe();
     if (!this._hass?.connection || !this._config || !this.isConnected) return;
+    const variables = { config: this._config, user: this._hass.user?.name, entity: this._config.entity };
     this._unsubs = TEMPLATE_KEYS.filter((key) => isTemplate(this._config[key])).map((key) =>
-      this._hass.connection.subscribeMessage(
-        (msg) => {
-          if (!('result' in msg)) return;
-          this._tpl[key] = String(msg.result ?? '').trim();
-          this._render();
-        },
-        {
-          type: 'render_template',
-          template: this._config[key],
-          variables: { config: this._config, user: this._hass.user?.name, entity: this._config.entity },
-          strict: false,
-        },
-      ).catch(() => null));
+      subscribeTemplate(this._hass, this._config[key], variables, (result) => {
+        this._tpl[key] = result;
+        this._render();
+      }));
   }
 
   _unsubscribe() {
-    for (const unsub of this._unsubs ?? []) unsub.then((fn) => fn?.()).catch(() => {});
+    unsubscribeAll(this._unsubs);
     this._unsubs = [];
   }
 

@@ -48,6 +48,8 @@ class M3ButtonCardEditor extends M3CardEditor {
           ],
         },
         { name: 'show_state', selector: { boolean: {} } },
+        { name: 'color', selector: { ui_color: {} } },
+        { name: 'active', selector: { template: {} } },
       ],
     },
     {
@@ -63,12 +65,15 @@ class M3ButtonCardEditor extends M3CardEditor {
     entity: 'Entité', name: 'Nom', icon: 'Icône', icon_on: 'Icône allumé', icon_off: 'Icône éteint',
     text_on: 'Texte allumé', text_off: 'Texte éteint', show_state: 'Afficher l’état',
     tap_action: 'Appui', hold_action: 'Appui long', double_tap_action: 'Double appui',
+    color: 'Couleur quand c’est actif', active: 'Actif si (template)',
   };
 
   static helpers = {
     tap_action: 'Vide : action adaptée à l’entité (allumer, lancer la scène, appuyer…)',
     hold_action: 'Vide : fenêtre de détails',
     double_tap_action: 'Vide : désactivé, l’appui simple reste instantané',
+    color: 'Vide : couleur primaire du thème',
+    active: 'Vide : selon l’état de l’entité. Ex. {{ is_state(\'vacuum.robot\', \'cleaning\') }}',
   };
 }
 
@@ -86,8 +91,27 @@ class M3ButtonCard extends HTMLElement {
   setConfig(config) {
     if (!config || !config.entity) throw new Error('m3-button-card : « entity » est obligatoire');
     this._config = { show_state: true, ...config };
+    this._activeResult = undefined;
     if (!this.shadowRoot) this._build();
+    this._resubscribe();
     if (this._hass) this._render();
+  }
+
+  connectedCallback() { this._resubscribe(); }
+
+  disconnectedCallback() { unsubscribeAll(this._unsubs); this._unsubs = []; }
+
+  // `active` peut être un template : Home Assistant renvoie son résultat à chaque changement.
+  _resubscribe() {
+    unsubscribeAll(this._unsubs);
+    this._unsubs = [];
+    const c = this._config;
+    if (!this._hass?.connection || !c || !this.isConnected || !isTemplate(c.active)) return;
+    const variables = { config: c, user: this._hass.user?.name, entity: c.entity };
+    this._unsubs = [subscribeTemplate(this._hass, c.active, variables, (result) => {
+      this._activeResult = isTruthy(result);
+      this._render();
+    })];
   }
 
   getCardSize() { return 2; }
@@ -95,7 +119,9 @@ class M3ButtonCard extends HTMLElement {
   getGridOptions() { return { columns: 6, rows: 'auto', min_columns: 3 }; }
 
   set hass(hass) {
+    const first = !this._hass;
     this._hass = hass;
+    if (first) this._resubscribe();
     const stateObj = hass.states[this._config.entity];
     if (stateObj === this._stateObj) return;
     this._stateObj = stateObj;
@@ -128,7 +154,9 @@ class M3ButtonCard extends HTMLElement {
     const c = this._config;
     const s = this._stateObj;
     const offline = !s || s.state === 'unavailable' || s.state === 'unknown';
-    const active = !offline && isActive(s);
+    // `active` : template, booléen, ou à défaut l'état de l'entité.
+    const forced = isTemplate(c.active) ? !!this._activeResult : c.active != null ? isTruthy(c.active) : null;
+    const active = !offline && (forced ?? isActive(s));
 
     this.toggleAttribute('offline', offline);
     const text = this._stateText(s, active, offline);
@@ -142,6 +170,13 @@ class M3ButtonCard extends HTMLElement {
     this._els.state.textContent = text ?? '';
 
     const st = this._card.style;
+    if (active && c.color) {
+      // Couleur choisie : ton pastel, texte sombre.
+      st.setProperty('--m3-bg', `color-mix(in srgb, ${cssColor(c.color)} 62%, white)`);
+      st.setProperty('--m3-fg', '#1c1b1f');
+      st.setProperty('--m3-icon-fg', '#1c1b1f');
+      return;
+    }
     st.setProperty('--m3-bg', active ? 'var(--md-sys-color-primary-container, rgba(var(--rgb-primary-color), 0.18))' : SURFACE);
     st.setProperty('--m3-fg', active ? 'var(--md-sys-color-on-primary-container, var(--primary-text-color))' : ON_SURFACE);
     st.setProperty('--m3-icon-fg', active ? 'var(--md-sys-color-primary, var(--primary-color))' : ON_SURFACE);

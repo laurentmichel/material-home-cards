@@ -1,5 +1,5 @@
-/*! Material Home Cards v1.12.0 — https://github.com/laurentmichel/material-home-cards */
-console.info('%c MATERIAL-HOME-CARDS %c v1.12.0 ', 'color:#fff;background:#6750a4;font-weight:700', 'color:#6750a4;background:#eaddff');
+/*! Material Home Cards v1.13.0 — https://github.com/laurentmichel/material-home-cards */
+console.info('%c MATERIAL-HOME-CARDS %c v1.13.0 ', 'color:#fff;background:#6750a4;font-weight:700', 'color:#6750a4;background:#eaddff');
 
 // ---- shared/color.js ----
 // Couleurs nommées de HA (amber, blue...) → variables du thème ; le reste (hex, rgb) tel quel.
@@ -155,6 +155,25 @@ function bucketize(samples, start, end) {
   return out;
 }
 
+// ---- shared/template.js ----
+// Templates Jinja rendus par Home Assistant et mis à jour en direct (abonnement render_template).
+const isTemplate = (v) => typeof v === 'string' && /\{[{%]/.test(v);
+
+// Renvoie la promesse de la fonction de désabonnement ; `callback` reçoit le résultat à chaque changement.
+function subscribeTemplate(hass, template, variables, callback) {
+  return hass.connection.subscribeMessage(
+    (msg) => { if ('result' in msg) callback(String(msg.result ?? '').trim()); },
+    { type: 'render_template', template, variables, strict: false },
+  ).catch(() => null);
+}
+
+const unsubscribeAll = (unsubs) => {
+  for (const unsub of unsubs ?? []) unsub.then((fn) => fn?.()).catch(() => {});
+};
+
+// Résultat d'un template interprété comme un booléen (« True », « on », « 1 »...).
+const isTruthy = (v) => v === true || ['true', 'on', 'yes', '1'].includes(String(v).trim().toLowerCase());
+
 // ---- shared/typography.js ----
 // Typographie commune aux cartes : titre (nom de l'entité) et état / sous-titre.
 const TITLE_FONT = 'font-size: 15px; font-weight: 550;';
@@ -210,7 +229,6 @@ const STYLE = `
 const VARIANTS = ['chip', 'pill', 'two-line'];
 // Clés acceptant un template Jinja (rendu par Home Assistant, mis à jour en direct).
 const TEMPLATE_KEYS = ['content', 'icon', 'color', 'label'];
-const isTemplate = (v) => typeof v === 'string' && /\{[{%]/.test(v);
 
 class M3BadgeEditor extends M3CardEditor {
   static schema = [
@@ -309,24 +327,16 @@ class M3Badge extends HTMLElement {
   _resubscribe() {
     this._unsubscribe();
     if (!this._hass?.connection || !this._config || !this.isConnected) return;
+    const variables = { config: this._config, user: this._hass.user?.name, entity: this._config.entity };
     this._unsubs = TEMPLATE_KEYS.filter((key) => isTemplate(this._config[key])).map((key) =>
-      this._hass.connection.subscribeMessage(
-        (msg) => {
-          if (!('result' in msg)) return;
-          this._tpl[key] = String(msg.result ?? '').trim();
-          this._render();
-        },
-        {
-          type: 'render_template',
-          template: this._config[key],
-          variables: { config: this._config, user: this._hass.user?.name, entity: this._config.entity },
-          strict: false,
-        },
-      ).catch(() => null));
+      subscribeTemplate(this._hass, this._config[key], variables, (result) => {
+        this._tpl[key] = result;
+        this._render();
+      }));
   }
 
   _unsubscribe() {
-    for (const unsub of this._unsubs ?? []) unsub.then((fn) => fn?.()).catch(() => {});
+    unsubscribeAll(this._unsubs);
     this._unsubs = [];
   }
 
@@ -443,6 +453,8 @@ class M3ButtonCardEditor extends M3CardEditor {
           ],
         },
         { name: 'show_state', selector: { boolean: {} } },
+        { name: 'color', selector: { ui_color: {} } },
+        { name: 'active', selector: { template: {} } },
       ],
     },
     {
@@ -458,12 +470,15 @@ class M3ButtonCardEditor extends M3CardEditor {
     entity: 'Entité', name: 'Nom', icon: 'Icône', icon_on: 'Icône allumé', icon_off: 'Icône éteint',
     text_on: 'Texte allumé', text_off: 'Texte éteint', show_state: 'Afficher l’état',
     tap_action: 'Appui', hold_action: 'Appui long', double_tap_action: 'Double appui',
+    color: 'Couleur quand c’est actif', active: 'Actif si (template)',
   };
 
   static helpers = {
     tap_action: 'Vide : action adaptée à l’entité (allumer, lancer la scène, appuyer…)',
     hold_action: 'Vide : fenêtre de détails',
     double_tap_action: 'Vide : désactivé, l’appui simple reste instantané',
+    color: 'Vide : couleur primaire du thème',
+    active: 'Vide : selon l’état de l’entité. Ex. {{ is_state(\'vacuum.robot\', \'cleaning\') }}',
   };
 }
 
@@ -481,8 +496,27 @@ class M3ButtonCard extends HTMLElement {
   setConfig(config) {
     if (!config || !config.entity) throw new Error('m3-button-card : « entity » est obligatoire');
     this._config = { show_state: true, ...config };
+    this._activeResult = undefined;
     if (!this.shadowRoot) this._build();
+    this._resubscribe();
     if (this._hass) this._render();
+  }
+
+  connectedCallback() { this._resubscribe(); }
+
+  disconnectedCallback() { unsubscribeAll(this._unsubs); this._unsubs = []; }
+
+  // `active` peut être un template : Home Assistant renvoie son résultat à chaque changement.
+  _resubscribe() {
+    unsubscribeAll(this._unsubs);
+    this._unsubs = [];
+    const c = this._config;
+    if (!this._hass?.connection || !c || !this.isConnected || !isTemplate(c.active)) return;
+    const variables = { config: c, user: this._hass.user?.name, entity: c.entity };
+    this._unsubs = [subscribeTemplate(this._hass, c.active, variables, (result) => {
+      this._activeResult = isTruthy(result);
+      this._render();
+    })];
   }
 
   getCardSize() { return 2; }
@@ -490,7 +524,9 @@ class M3ButtonCard extends HTMLElement {
   getGridOptions() { return { columns: 6, rows: 'auto', min_columns: 3 }; }
 
   set hass(hass) {
+    const first = !this._hass;
     this._hass = hass;
+    if (first) this._resubscribe();
     const stateObj = hass.states[this._config.entity];
     if (stateObj === this._stateObj) return;
     this._stateObj = stateObj;
@@ -523,7 +559,9 @@ class M3ButtonCard extends HTMLElement {
     const c = this._config;
     const s = this._stateObj;
     const offline = !s || s.state === 'unavailable' || s.state === 'unknown';
-    const active = !offline && isActive(s);
+    // `active` : template, booléen, ou à défaut l'état de l'entité.
+    const forced = isTemplate(c.active) ? !!this._activeResult : c.active != null ? isTruthy(c.active) : null;
+    const active = !offline && (forced ?? isActive(s));
 
     this.toggleAttribute('offline', offline);
     const text = this._stateText(s, active, offline);
@@ -537,6 +575,13 @@ class M3ButtonCard extends HTMLElement {
     this._els.state.textContent = text ?? '';
 
     const st = this._card.style;
+    if (active && c.color) {
+      // Couleur choisie : ton pastel, texte sombre.
+      st.setProperty('--m3-bg', `color-mix(in srgb, ${cssColor(c.color)} 62%, white)`);
+      st.setProperty('--m3-fg', '#1c1b1f');
+      st.setProperty('--m3-icon-fg', '#1c1b1f');
+      return;
+    }
     st.setProperty('--m3-bg', active ? 'var(--md-sys-color-primary-container, rgba(var(--rgb-primary-color), 0.18))' : SURFACE);
     st.setProperty('--m3-fg', active ? 'var(--md-sys-color-on-primary-container, var(--primary-text-color))' : ON_SURFACE);
     st.setProperty('--m3-icon-fg', active ? 'var(--md-sys-color-primary, var(--primary-color))' : ON_SURFACE);
@@ -1221,6 +1266,8 @@ class M3ListCardEditor extends M3CardEditor {
             entity: { label: 'Entité', selector: { entity: {} } },
             name: { label: 'Nom', selector: { text: {} } },
             label: { label: 'Sous-titre (vide : état de l’entité)', selector: { text: {} } },
+            label_on: { label: 'Sous-titre quand c’est actif', selector: { text: {} } },
+            label_off: { label: 'Sous-titre quand c’est inactif', selector: { text: {} } },
             icon: { label: 'Icône', selector: { icon: {} } },
             trailing: {
               label: 'À droite', selector: {
@@ -1333,7 +1380,8 @@ class M3ListCard extends HTMLElement {
     r.name.textContent = row.name ?? s?.attributes.friendly_name ?? row.entity;
     Object.assign(r.icon, { hass: this._hass, stateObj: s, icon: row.icon });
     // Sous-titre : celui de la config, sinon l'état (sauf s'il est déjà affiché à droite).
-    r.label.textContent = row.label ?? (trailing === 'state' ? '' : this._stateText(s, offline) ?? '');
+    const custom = (active ? row.label_on : offline ? null : row.label_off) ?? row.label;
+    r.label.textContent = custom ?? (trailing === 'state' ? '' : this._stateText(s, offline) ?? '');
 
     if (r.kind !== trailing) {
       r.kind = trailing;
