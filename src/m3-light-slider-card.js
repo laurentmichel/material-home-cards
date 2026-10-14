@@ -3,7 +3,7 @@
 const STYLE = `
 :host { display: block; height: 100%; }
 ha-card {
-  position: relative; overflow: hidden; height: 100%; min-height: 96px; box-sizing: border-box;
+  position: relative; overflow: hidden; height: 100%; min-height: 100px; box-sizing: border-box;
   border-radius: 28px; border: none; box-shadow: none;
   background: var(--m3-bg); color: var(--m3-fg);
   touch-action: pan-y; user-select: none; -webkit-user-select: none; cursor: pointer;
@@ -15,19 +15,15 @@ ha-card {
 }
 :host([dragging]) .fill { transition: background 300ms ease; }
 .content {
-  position: relative; display: flex; align-items: center; gap: 16px;
-  height: 100%; padding: 0 24px; box-sizing: border-box;
+  position: relative; display: flex; align-items: center; gap: 14px;
+  height: 100%; padding: 0 20px; box-sizing: border-box;
 }
-.icon {
-  width: 48px; height: 48px; flex: none; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  background: var(--m3-icon-bg); color: var(--m3-icon-fg); transition: background 300ms ease;
-}
+.icon { flex: none; display: flex; color: var(--m3-icon-fg); transition: color 300ms ease; }
 .icon ha-icon { --mdc-icon-size: 24px; }
 .text { flex: 1; min-width: 0; }
-.name { font-size: 1rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.state { font-size: 0.8125rem; opacity: 0.8; }
-.pct { font-size: 1.75rem; font-weight: 400; font-variant-numeric: tabular-nums; }
+.name { font-size: 15px; font-weight: 550; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.state { font-size: 13px; font-weight: 500; opacity: 0.8; }
+.pct { color: var(--m3-pct-fg); transition: color 300ms ease; font-size: 1.5rem; font-weight: 400; font-variant-numeric: tabular-nums; }
 :host([unavailable]) ha-card { opacity: 0.5; cursor: default; }
 `;
 
@@ -72,7 +68,8 @@ class M3LightSliderCard extends HTMLElement {
 
   getCardSize() { return 2; }
 
-  getGridOptions() { return { columns: 12, rows: 2, min_rows: 2 }; }
+  // Hauteur auto : la carte fait 100 px (entre 1 rangée de 56 px et 2 rangées de 120 px).
+  getGridOptions() { return { columns: 12, rows: 'auto', min_rows: 1 }; }
 
   set hass(hass) {
     this._hass = hass;
@@ -142,15 +139,18 @@ class M3LightSliderCard extends HTMLElement {
       st.setProperty('--m3-fill', `rgb(${r}, ${g}, ${b})`);
       st.setProperty('--m3-bg', `linear-gradient(rgba(${r}, ${g}, ${b}, 0.22), rgba(${r}, ${g}, ${b}, 0.22)), ${SURFACE}`);
       st.setProperty('--m3-pct', `${Math.max(pct, 4)}%`);
-      st.setProperty('--m3-fg', overFill ? (lightFill ? '#1c1b1f' : '#ffffff') : ON_SURFACE);
-      st.setProperty('--m3-icon-bg', lightFill ? 'rgba(255, 255, 255, 0.45)' : 'rgba(0, 0, 0, 0.22)');
-      st.setProperty('--m3-icon-fg', lightFill ? '#1c1b1f' : '#ffffff');
+      const onFill = lightFill ? '#1c1b1f' : '#ffffff';
+      st.setProperty('--m3-fg', overFill ? onFill : ON_SURFACE);
+      // Le pourcentage est collé au bord droit : il n'est sur la partie remplie qu'au-delà de ~85 %.
+      st.setProperty('--m3-pct-fg', pct >= 85 ? onFill : ON_SURFACE);
+      // Sans fond, l'icône (à gauche) est sur la partie remplie dès ~12 % : même contraste que le texte.
+      st.setProperty('--m3-icon-fg', pct >= 12 ? onFill : ON_SURFACE);
     } else {
       st.setProperty('--m3-fill', 'transparent');
       st.setProperty('--m3-bg', SURFACE);
       st.setProperty('--m3-pct', '0%');
       st.setProperty('--m3-fg', ON_SURFACE);
-      st.setProperty('--m3-icon-bg', 'var(--md-sys-color-surface-container-highest, rgba(127, 127, 127, 0.15))');
+      st.setProperty('--m3-pct-fg', ON_SURFACE);
       st.setProperty('--m3-icon-fg', ON_SURFACE);
     }
   }
