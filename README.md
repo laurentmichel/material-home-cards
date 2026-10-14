@@ -12,6 +12,7 @@ et retombent sur les couleurs Home Assistant sinon.
 | Capteur avec courbe d'historique | `custom:m3-graph-card` |
 | Bouton pour n'importe quelle entité | `custom:m3-button-card` |
 | Popup ouverte par un `#hash` | `custom:m3-popup-card` |
+| Pièce : température, humidité, lumière et chauffage | `custom:m3-room-card` |
 | Badge pour le haut des vues | `custom:m3-badge` |
 
 ## Installation (HACS)
@@ -162,6 +163,28 @@ style:
 
 L'éditeur visuel règle le hash, l'en-tête, le comportement et l'apparence ; la liste `cards` se modifie en YAML.
 
+## `m3-room-card`
+
+Carte d'une pièce : icône et nom, température en grand et humidité à côté. Le fond prend la couleur
+pastel de la lumière quand elle est allumée, et l'icône devient une flamme rouge quand le radiateur chauffe
+(`hvac_action: heating`). Appui long : allumer / éteindre la lumière. Avec une action « Naviguer » vers un
+`#hash`, l'appui ouvre la popup de la pièce.
+
+```yaml
+type: custom:m3-room-card
+name: Salon
+icon: mdi:sofa-outline
+light: light.salon                                 # facultatif, couleur du fond
+climate: climate.salon                             # facultatif, flamme pendant la chauffe
+temperature: sensor.thermometre_salon_temperature  # facultatif, sinon celle du thermostat
+humidity: sensor.thermometre_salon_humidity        # facultatif
+tap_action:                                        # facultatif, sinon la fenêtre de détails
+  action: navigate
+  navigation_path: '#salon'
+hold_action:                                       # facultatif, sinon allumer / éteindre la lumière
+  action: more-info
+```
+
 ## `m3-badge`
 
 Badge à placer en haut d'une vue (Modifier → Badges), au style « chip » de Material 3 : icône et valeur
@@ -207,7 +230,7 @@ et **recharge automatiquement la page Home Assistant** à chaque sauvegarde dans
 1. `npm run dev` : l'adresse à utiliser s'affiche, par exemple `http://192.168.1.20:5000/material-home-cards-dev.js`
 2. Paramètres → Tableaux de bord → ⋮ → Ressources → ajouter cette adresse en **module JavaScript** (une seule fois)
 3. Dans un tableau de bord de test, utiliser les types `-dev` :
-   `custom:m3-thermostat-card-dev`, `custom:m3-light-slider-card-dev`, `custom:m3-graph-card-dev`, `custom:m3-button-card-dev`, `custom:m3-popup-card-dev` et `custom:m3-badge-dev`
+   `custom:m3-thermostat-card-dev`, `custom:m3-light-slider-card-dev`, `custom:m3-graph-card-dev`, `custom:m3-button-card-dev`, `custom:m3-popup-card-dev`, `custom:m3-room-card-dev` et `custom:m3-badge-dev`
 
 Les types `-dev` cohabitent avec la version installée par HACS, qui reste intacte. Le port se change avec
 `PORT=5001 npm run dev`. Si Home Assistant est ouvert en **https**, le navigateur bloque une ressource en http :
