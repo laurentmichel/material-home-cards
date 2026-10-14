@@ -1,5 +1,5 @@
-/*! Material Home Cards v1.1.0 — https://github.com/laurentmichel/material-home-cards */
-console.info('%c MATERIAL-HOME-CARDS %c v1.1.0 ', 'color:#fff;background:#6750a4;font-weight:700', 'color:#6750a4;background:#eaddff');
+/*! Material Home Cards v1.2.0 — https://github.com/laurentmichel/material-home-cards */
+console.info('%c MATERIAL-HOME-CARDS %c v1.2.0 ', 'color:#fff;background:#6750a4;font-weight:700', 'color:#6750a4;background:#eaddff');
 
 // ---- m3-light-slider-card.js ----
 {
@@ -233,7 +233,7 @@ if (!customElements.get('m3-light-slider-card')) {
 // ---- m3-thermostat-card.js ----
 {
 // m3-thermostat-card — carte thermostat Material 3 : consigne en grand entre deux boutons − / +
-// avec affichage immédiat, mode et température actuelle en dessous.
+// avec affichage immédiat, mode et température actuelle en dessous, bouton marche/arrêt.
 const STYLE = `
 :host { display: block; height: 100%; }
 ha-card {
@@ -250,13 +250,16 @@ button {
 }
 button:focus-visible { outline: 2px solid var(--m3-primary); outline-offset: 2px; }
 .header { display: flex; align-items: center; gap: 12px; min-height: 32px; }
-.power {
-  width: 32px; height: 32px; margin-left: -6px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center; flex: none;
-}
-.power ha-icon { --mdc-icon-size: 20px; }
+.mode-icon { --mdc-icon-size: 20px; flex: none; }
 .name { flex: 1; min-width: 0; font-size: 1rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.chevron { --mdc-icon-size: 22px; opacity: 0.9; flex: none; }
+.power {
+  display: flex; align-items: center; gap: 6px; flex: none;
+  height: 32px; padding: 0 14px 0 10px; border-radius: 16px;
+  font-size: 0.875rem; font-weight: 500;
+  border: var(--m3-chip-border); background: var(--m3-chip-bg); color: var(--m3-chip-fg);
+  transition: background 300ms ease;
+}
+.power ha-icon { --mdc-icon-size: 18px; }
 .controls { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .step {
   width: 80px; height: 52px; border-radius: 26px; flex: none;
@@ -280,6 +283,7 @@ button:focus-visible { outline: 2px solid var(--m3-primary); outline-offset: 2px
 const SURFACE = 'var(--md-sys-color-surface-container-high, var(--ha-card-background, var(--card-background-color)))';
 const ON_SURFACE = 'var(--md-sys-color-on-surface, var(--primary-text-color))';
 const PRIMARY = 'var(--md-sys-color-primary, var(--primary-color))';
+const ON_PRIMARY = 'var(--md-sys-color-on-primary, #fff)';
 const SEND_DELAY = 600;
 const PENDING_TTL = 8000;
 
@@ -326,9 +330,9 @@ class M3ThermostatCard extends HTMLElement {
     root.innerHTML = `<style>${STYLE}</style>
       <ha-card>
         <div class="header">
-          <button class="power" aria-label="Allumer / éteindre"><ha-icon></ha-icon></button>
+          <ha-icon class="mode-icon"></ha-icon>
           <div class="name"></div>
-          <ha-icon class="chevron" icon="mdi:chevron-right"></ha-icon>
+          <button class="power" aria-label="Allumer / éteindre"><ha-icon icon="mdi:power"></ha-icon><span></span></button>
         </div>
         <div class="controls">
           <button class="step minus" aria-label="Baisser la consigne"><ha-icon icon="mdi:minus"></ha-icon></button>
@@ -340,7 +344,8 @@ class M3ThermostatCard extends HTMLElement {
     this._card = root.querySelector('ha-card');
     this._els = {
       power: root.querySelector('.power'),
-      icon: root.querySelector('.power ha-icon'),
+      icon: root.querySelector('.mode-icon'),
+      powerLabel: root.querySelector('.power span'),
       name: root.querySelector('.name'),
       target: root.querySelector('.target'),
       status: root.querySelector('.status'),
@@ -376,6 +381,7 @@ class M3ThermostatCard extends HTMLElement {
     this.toggleAttribute('no-target', target == null);
     this._els.name.textContent = this._config.name ?? a.friendly_name ?? this._config.entity;
     this._els.icon.icon = this._config.icon ?? mode.icon;
+    this._els.powerLabel.textContent = on ? 'Marche' : 'Arrêt';
     this._els.target.textContent = target == null ? '—' : fmt(target);
     const parts = [unavailable ? 'Indisponible' : mode.label];
     if (a.current_temperature != null) parts.push(`${fmt(a.current_temperature)} °C`);
@@ -385,6 +391,9 @@ class M3ThermostatCard extends HTMLElement {
     st.setProperty('--m3-primary', PRIMARY);
     st.setProperty('--m3-bg', on ? 'var(--md-sys-color-primary-container, rgba(var(--rgb-primary-color), 0.18))' : SURFACE);
     st.setProperty('--m3-fg', on ? 'var(--md-sys-color-on-primary-container, var(--primary-text-color))' : ON_SURFACE);
+    st.setProperty('--m3-chip-bg', on ? PRIMARY : 'transparent');
+    st.setProperty('--m3-chip-fg', on ? ON_PRIMARY : 'inherit');
+    st.setProperty('--m3-chip-border', on ? 'none' : '1px solid var(--md-sys-color-outline, rgba(127, 127, 127, 0.5))');
   }
 
   // Chaque appui part de la dernière valeur affichée ; une seule commande part après le dernier appui.

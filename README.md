@@ -51,7 +51,7 @@ hvac_mode: heat      # facultatif, mode utilisé par « Marche » (défaut : hea
 icon: mdi:radiator   # facultatif, sinon l'icône suit le mode (flamme en chauffage, power à l'arrêt)
 ```
 
-L'icône en haut à gauche allume / éteint ; un appui ailleurs sur la carte (ou sur le chevron) ouvre la fenêtre de détails.
+Le bouton « Marche / Arrêt » en haut à droite allume / éteint ; un appui ailleurs sur la carte ouvre la fenêtre de détails.
 
 ## Développement
 
