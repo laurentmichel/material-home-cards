@@ -55,7 +55,7 @@ class M3ListCardEditor extends M3CardEditor {
         {
           name: 'radius', selector: {
             select: { mode: 'dropdown', options: [
-              { value: 'small', label: 'Petits' }, { value: 'medium', label: 'Moyens' }, { value: 'large', label: 'Grands' },
+              { value: 'small', label: 'Small' }, { value: 'medium', label: 'Medium' }, { value: 'large', label: 'Large' },
             ] },
           },
         },
@@ -67,33 +67,33 @@ class M3ListCardEditor extends M3CardEditor {
         object: {
           multiple: true, label_field: 'name', description_field: 'entity',
           fields: {
-            entity: { label: 'Entité', selector: { entity: {} } },
-            name: { label: 'Nom', selector: { text: {} } },
-            label: { label: 'Sous-titre (vide : état de l’entité)', selector: { text: {} } },
-            label_on: { label: 'Sous-titre quand c’est actif', selector: { text: {} } },
-            label_off: { label: 'Sous-titre quand c’est inactif', selector: { text: {} } },
-            alert_below: { label: 'Alerte sous (valeur)', selector: { number: { mode: 'box', step: 'any' } } },
-            icon: { label: 'Icône', selector: { icon: {} } },
+            entity: { label: 'Entity', selector: { entity: {} } },
+            name: { label: 'Name', selector: { text: {} } },
+            label: { label: 'Subtitle (empty: entity state)', selector: { text: {} } },
+            label_on: { label: 'Subtitle when active', selector: { text: {} } },
+            label_off: { label: 'Subtitle when inactive', selector: { text: {} } },
+            alert_below: { label: 'Alert below (value)', selector: { number: { mode: 'box', step: 'any' } } },
+            icon: { label: 'Icon', selector: { icon: {} } },
             trailing: {
-              label: 'À droite', selector: {
+              label: 'On the right', selector: {
                 select: { mode: 'dropdown', options: [
-                  { value: 'auto', label: 'Automatique' }, { value: 'switch', label: 'Interrupteur' },
-                  { value: 'state', label: 'État' }, { value: 'chevron', label: 'Flèche' }, { value: 'none', label: 'Rien' },
+                  { value: 'auto', label: 'Automatic' }, { value: 'switch', label: 'Switch' },
+                  { value: 'state', label: 'State' }, { value: 'chevron', label: 'Chevron' }, { value: 'none', label: 'Nothing' },
                 ] },
               },
             },
-            tap_action: { label: 'Appui', selector: { ui_action: {} } },
-            hold_action: { label: 'Appui long', selector: { ui_action: {} } },
+            tap_action: { label: 'Tap', selector: { ui_action: {} } },
+            hold_action: { label: 'Long press', selector: { ui_action: {} } },
           },
         },
       },
     },
   ];
 
-  static labels = { title: 'Titre', radius: 'Coins', dynamic: 'Teinter les lignes actives', rows: 'Lignes' };
+  static labels = { title: 'Title', radius: 'Corners', dynamic: 'Tint active rows', rows: 'Rows' };
 
   static helpers = {
-    rows: 'À droite, « Automatique » : interrupteur pour ce qui s’allume, flèche pour une navigation',
+    rows: 'On the right, "Automatic": a switch for things that turn on, a chevron for navigation',
   };
 }
 
@@ -107,19 +107,19 @@ class M3ListCard extends HTMLElement {
     const entities = Object.keys(hass.states);
     const pick = (domain) => entities.find((e) => e.startsWith(`${domain}.`));
     return {
-      title: 'Réglages',
+      title: t(hass, 'Settings'),
       rows: [pick('light'), pick('switch'), pick('scene')].filter(Boolean).map((entity) => ({ entity })),
     };
   }
 
   setConfig(config) {
     if (!config || !Array.isArray(config.rows) || !config.rows.length) {
-      throw new Error('m3-list-card : « rows » doit contenir au moins une ligne');
+      throw new Error('m3-list-card: "rows" must contain at least one row');
     }
     for (const row of config.rows) {
-      if (!row.entity && !row.name) throw new Error('m3-list-card : chaque ligne a besoin d’une « entity » ou d’un « name »');
+      if (!row.entity && !row.name) throw new Error('m3-list-card: every row needs an "entity" or a "name"');
       if (row.trailing && !TRAILING.includes(row.trailing)) {
-        throw new Error(`m3-list-card : « trailing » doit valoir ${TRAILING.join(', ')}`);
+        throw new Error(`m3-list-card: "trailing" must be one of ${TRAILING.join(', ')}`);
       }
     }
     this._config = { dynamic: true, radius: 'large', ...config };
@@ -244,11 +244,11 @@ class M3ListCard extends HTMLElement {
 
   _stateText(s, offline) {
     if (!s) return null;
-    if (offline) return 'Hors ligne';
+    if (offline) return t(this._hass, 'Offline');
     const [domain] = s.entity_id.split('.');
     // L'état d'une scène ou d'un bouton est la date du dernier déclenchement : rien à afficher.
     if (['scene', 'button', 'input_button'].includes(domain)) return null;
-    if (domain === 'script') return s.state === 'on' ? 'En cours' : null;
+    if (domain === 'script') return s.state === 'on' ? t(this._hass, 'Running') : null;
     const state = this._hass.formatEntityState?.(s) ?? s.state;
     if (domain === 'light' && s.state === 'on' && s.attributes.brightness != null) {
       return `${state} • ${Math.round((s.attributes.brightness / 255) * 100)} %`;
@@ -315,7 +315,7 @@ if (!customElements.get('m3-list-card')) {
   window.customCards.push({
     type: 'm3-list-card',
     name: 'M3 List',
-    description: 'Liste Material 3 Expressive : lignes empilées avec interrupteur, état ou flèche à droite',
+    description: t(null, 'Material 3 Expressive list: stacked rows with a switch, state or chevron on the right'),
     preview: true,
   });
 }

@@ -54,9 +54,9 @@ class M3BadgeEditor extends M3CardEditor {
       name: 'variant', selector: {
         select: {
           mode: 'box', options: [
-            { value: 'chip', label: 'Chip tonal' },
-            { value: 'pill', label: 'Pilule' },
-            { value: 'two-line', label: 'Deux lignes' },
+            { value: 'chip', label: 'Tonal chip' },
+            { value: 'pill', label: 'Pill' },
+            { value: 'two-line', label: 'Two lines' },
           ],
         },
       },
@@ -74,14 +74,14 @@ class M3BadgeEditor extends M3CardEditor {
   ];
 
   static labels = {
-    entity: 'Entité', variant: 'Style', icon: 'Icône', color: 'Couleur', label: 'Libellé (deux lignes)',
-    attribute: 'Attribut affiché', content: 'Contenu (template)', tap_action: 'Appui',
+    entity: 'Entity', variant: 'Style', icon: 'Icon', color: 'Color', label: 'Label (two lines)',
+    attribute: 'Displayed attribute', content: 'Content (template)', tap_action: 'Tap',
   };
 
   static helpers = {
-    color: 'Vide : couleur de l’état, comme les badges natifs',
-    content: 'Remplace l’état ; icône, couleur et libellé acceptent aussi un template',
-    tap_action: 'Vide : fenêtre de détails',
+    color: 'Empty: state color, like native badges',
+    content: 'Replaces the state; icon, color and label also accept a template',
+    tap_action: 'Empty: more-info dialog',
   };
 }
 
@@ -97,9 +97,9 @@ class M3Badge extends HTMLElement {
   }
 
   setConfig(config) {
-    if (!config) throw new Error('m3-badge : configuration invalide');
+    if (!config) throw new Error('m3-badge: invalid configuration');
     if (config.variant && !VARIANTS.includes(config.variant)) {
-      throw new Error(`m3-badge : « variant » doit valoir ${VARIANTS.join(', ')}`);
+      throw new Error(`m3-badge: "variant" must be one of ${VARIANTS.join(', ')}`);
     }
     this._config = { variant: 'chip', ...config };
     this._tpl = {};
@@ -171,7 +171,7 @@ class M3Badge extends HTMLElement {
 
     let value = this._get('content');
     if (value == null && !isTemplate(c.content)) {
-      if (!s) value = c.entity ? 'Introuvable' : '';
+      if (!s) value = c.entity ? t(this._hass, 'Not found') : '';
       else if (c.attribute) value = hass?.formatEntityAttributeValue?.(s, c.attribute) ?? s.attributes[c.attribute];
       else value = hass?.formatEntityState?.(s) ?? s.state;
     }
@@ -212,7 +212,7 @@ if (!customElements.get('m3-badge')) {
   window.customBadges.push({
     type: 'm3-badge',
     name: 'M3 Badge',
-    description: 'Badge Material 3 : chip tonal, pilule avec pastille ou deux lignes',
+    description: t(null, 'Material 3 badge: tonal chip, pill with a dot or two lines'),
     preview: true,
   });
 }

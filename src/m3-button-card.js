@@ -45,7 +45,7 @@ class M3ButtonCardEditor extends M3CardEditor {
       ],
     },
     {
-      type: 'expandable', name: '', title: 'Allumé / éteint', icon: 'mdi:toggle-switch-outline', schema: [
+      type: 'expandable', name: '', title: 'On / off', icon: 'mdi:toggle-switch-outline', schema: [
         {
           type: 'grid', name: '', schema: [
             { name: 'icon_on', selector: { icon: {} }, context: { icon_entity: 'entity' } },
@@ -70,18 +70,18 @@ class M3ButtonCardEditor extends M3CardEditor {
   ];
 
   static labels = {
-    entity: 'Entité', name: 'Nom', icon: 'Icône', icon_on: 'Icône allumé', icon_off: 'Icône éteint',
-    text_on: 'Texte allumé', text_off: 'Texte éteint', show_state: 'Afficher l’état',
-    tap_action: 'Appui', hold_action: 'Appui long', double_tap_action: 'Double appui',
-    color: 'Couleur quand c’est actif', active: 'Actif si (template)', chip: 'Pastille à droite (texte ou template)',
+    entity: 'Entity', name: 'Name', icon: 'Icon', icon_on: 'Icon when on', icon_off: 'Icon when off',
+    text_on: 'Text when on', text_off: 'Text when off', show_state: 'Show the state',
+    tap_action: 'Tap', hold_action: 'Long press', double_tap_action: 'Double tap',
+    color: 'Color when active', active: 'Active when (template)', chip: 'Chip on the right (text or template)',
   };
 
   static helpers = {
-    tap_action: 'Vide : action adaptée à l’entité (allumer, lancer la scène, appuyer…)',
-    hold_action: 'Vide : fenêtre de détails',
-    double_tap_action: 'Vide : désactivé, l’appui simple reste instantané',
-    color: 'Vide : couleur primaire du thème',
-    active: 'Vide : selon l’état de l’entité. Ex. {{ is_state(\'vacuum.robot\', \'cleaning\') }}',
+    tap_action: 'Empty: action suited to the entity (turn on, run the scene, press…)',
+    hold_action: 'Empty: more-info dialog',
+    double_tap_action: 'Empty: disabled, a single tap stays instant',
+    color: 'Empty: theme primary color',
+    active: 'Empty: based on the entity state. E.g. {{ is_state(\'vacuum.robot\', \'cleaning\') }}',
   };
 }
 
@@ -97,7 +97,7 @@ class M3ButtonCard extends HTMLElement {
   }
 
   setConfig(config) {
-    if (!config || !config.entity) throw new Error('m3-button-card : « entity » est obligatoire');
+    if (!config || !config.entity) throw new Error('m3-button-card: "entity" is required');
     this._config = { show_state: true, ...config };
     this._tpl = {};
     if (!this.shadowRoot) this._build();
@@ -144,7 +144,7 @@ class M3ButtonCard extends HTMLElement {
         <div class="icon"><ha-state-icon></ha-state-icon></div>
         <div class="text"><div class="name"></div><div class="state"></div></div>
         <span class="chip"></span>
-        <ha-icon class="badge" icon="mdi:alert-circle-outline" title="Hors ligne"></ha-icon>
+        <ha-icon class="badge" icon="mdi:alert-circle-outline" title="${t(this._hass, 'Offline')}"></ha-icon>
       </ha-card>`;
     this._card = root.querySelector('ha-card');
     this._els = {
@@ -196,7 +196,7 @@ class M3ButtonCard extends HTMLElement {
   }
 
   _stateText(s, active, offline) {
-    if (offline) return 'Hors ligne';
+    if (offline) return t(this._hass, 'Offline');
     const c = this._config;
     if (active && c.text_on) return c.text_on;
     if (!active && c.text_off) return c.text_off;
@@ -205,7 +205,7 @@ class M3ButtonCard extends HTMLElement {
     const [domain] = s.entity_id.split('.');
     // L'état d'une scène ou d'un bouton est la date du dernier déclenchement : rien à afficher.
     if (['scene', 'button', 'input_button'].includes(domain)) return null;
-    if (domain === 'script') return s.state === 'on' ? 'En cours' : null;
+    if (domain === 'script') return s.state === 'on' ? t(this._hass, 'Running') : null;
     if (domain === 'climate' && s.attributes.current_temperature != null) {
       return `${state} • ${format(s, 'current_temperature')}`;
     }
@@ -287,7 +287,7 @@ if (!customElements.get('m3-button-card')) {
   window.customCards.push({
     type: 'm3-button-card',
     name: 'M3 Button',
-    description: 'Bouton Material 3 pour n’importe quelle entité, action adaptée au type d’entité',
+    description: t(null, 'Material 3 button for any entity, with an action suited to the entity type'),
     preview: true,
   });
 }

@@ -92,7 +92,7 @@ class M3PopupCardEditor extends M3CardEditor {
   static schema = [
     { name: 'hash', required: true, selector: { text: {} } },
     {
-      type: 'expandable', name: 'header', title: 'En-tête', icon: 'mdi:page-layout-header', schema: [
+      type: 'expandable', name: 'header', title: 'Header', icon: 'mdi:page-layout-header', schema: [
         {
           type: 'grid', name: '', schema: [
             { name: 'name', selector: { text: {} } },
@@ -104,9 +104,9 @@ class M3PopupCardEditor extends M3CardEditor {
                 select: {
                   mode: 'dropdown',
                   options: [
-                    { value: 'name', label: 'Nom seulement' },
-                    { value: 'state', label: 'Nom et état' },
-                    { value: 'switch', label: 'Nom, état et interrupteur' },
+                    { value: 'name', label: 'Name only' },
+                    { value: 'state', label: 'Name and state' },
+                    { value: 'switch', label: 'Name, state and switch' },
                   ],
                 },
               },
@@ -117,7 +117,7 @@ class M3PopupCardEditor extends M3CardEditor {
       ],
     },
     {
-      type: 'expandable', name: 'settings', title: 'Comportement', icon: 'mdi:gesture-swipe-down', schema: [
+      type: 'expandable', name: 'settings', title: 'Behavior', icon: 'mdi:gesture-swipe-down', schema: [
         { name: 'close_by_clicking_outside', selector: { boolean: {} } },
         {
           type: 'grid', name: '', schema: [
@@ -128,7 +128,7 @@ class M3PopupCardEditor extends M3CardEditor {
       ],
     },
     {
-      type: 'expandable', name: 'style', title: 'Apparence', icon: 'mdi:palette-outline', schema: [
+      type: 'expandable', name: 'style', title: 'Appearance', icon: 'mdi:palette-outline', schema: [
         {
           type: 'grid', name: '', schema: [
             { name: 'width_desktop', selector: { number: { min: 280, max: 1200, step: 10, mode: 'box', unit_of_measurement: 'px' } } },
@@ -142,16 +142,16 @@ class M3PopupCardEditor extends M3CardEditor {
   ];
 
   static labels = {
-    hash: 'Hash d’ouverture', name: 'Titre', icon: 'Icône', entity: 'Entité', button_type: 'En-tête',
-    show_header: 'Afficher l’en-tête', close_by_clicking_outside: 'Fermer en appuyant à côté',
-    auto_close: 'Fermeture automatique', slide_to_close_distance: 'Distance de glissement',
-    width_desktop: 'Largeur (ordinateur)', width_mobile: 'Largeur (mobile)',
-    border_radius: 'Arrondi', backdrop_blur: 'Flou du fond',
+    hash: 'Opening hash', name: 'Title', icon: 'Icon', entity: 'Entity', button_type: 'Header',
+    show_header: 'Show the header', close_by_clicking_outside: 'Close when tapping outside',
+    auto_close: 'Auto close', slide_to_close_distance: 'Swipe distance',
+    width_desktop: 'Width (desktop)', width_mobile: 'Width (mobile)',
+    border_radius: 'Corner radius', backdrop_blur: 'Backdrop blur',
   };
 
   static helpers = {
-    hash: 'Ex. #salon : ouvrir avec une action « Naviguer » vers #salon. Les cartes de la popup se modifient en YAML (cards:)',
-    auto_close: '0 ou vide : pas de fermeture automatique',
+    hash: 'E.g. #living-room: open it with a "Navigate" action to #living-room. The popup\'s cards are edited in YAML (cards:)',
+    auto_close: '0 or empty: never closes automatically',
   };
 }
 
@@ -167,7 +167,7 @@ class M3PopupCard extends HTMLElement {
 
   setConfig(config) {
     if (!config || !config.hash || !String(config.hash).startsWith('#')) {
-      throw new Error('m3-popup-card : « hash » est obligatoire et doit commencer par # (ex. #salon)');
+      throw new Error('m3-popup-card: "hash" is required and must start with # (e.g. #living-room)');
     }
     this._config = config;
     this._header = { show_header: true, name: 'Popup', button_type: 'name', ...config.header };
@@ -215,7 +215,7 @@ class M3PopupCard extends HTMLElement {
       <ha-card>
         <ha-icon></ha-icon>
         <div class="text"><div class="name"></div><div class="info"></div></div>
-        <button>Ouvrir</button>
+        <button>${t(this._hass, 'Open')}</button>
       </ha-card>`;
     root.querySelector('button').addEventListener('click', () => this._open());
   }
@@ -225,7 +225,7 @@ class M3PopupCard extends HTMLElement {
     const count = (this._config.cards ?? []).length;
     root.querySelector('ha-icon').icon = this._header.icon ?? 'mdi:dock-window';
     root.querySelector('.name').textContent = `Popup ${this._header.name}`;
-    root.querySelector('.info').textContent = `${this._config.hash} • ${count} carte${count > 1 ? 's' : ''}`;
+    root.querySelector('.info').textContent = `${this._config.hash} • ${t(this._hass, count > 1 ? '{count} cards' : '{count} card', { count })}`;
   }
 
   _checkHash() {
@@ -260,8 +260,8 @@ class M3PopupCard extends HTMLElement {
         <div class="header">
           <ha-icon class="icon"></ha-icon>
           <div class="title"><div class="name"></div><div class="state"></div></div>
-          <button class="switch" role="switch" aria-label="Allumer / éteindre"></button>
-          <button class="icon-button close" aria-label="Fermer"><ha-icon icon="mdi:close"></ha-icon></button>
+          <button class="switch" role="switch" aria-label="${t(this._hass, 'Turn on / off')}"></button>
+          <button class="icon-button close" aria-label="${t(this._hass, 'Close')}"><ha-icon icon="mdi:close"></ha-icon></button>
         </div>
         <div class="body"></div>
       </div>`;
@@ -397,6 +397,6 @@ if (!customElements.get('m3-popup-card')) {
   window.customCards.push({
     type: 'm3-popup-card',
     name: 'M3 Popup',
-    description: 'Popup Material 3 ouverte par un #hash, contenant n’importe quelles cartes',
+    description: t(null, 'Material 3 popup opened by a #hash, holding any cards'),
   });
 }

@@ -43,10 +43,10 @@ class M3MultiGraphCardEditor extends M3CardEditor {
         object: {
           multiple: true, label_field: 'name', description_field: 'entity',
           fields: {
-            entity: { label: 'Capteur', required: true, selector: { entity: { domain: ['sensor', 'input_number', 'number'] } } },
-            name: { label: 'Nom', selector: { text: {} } },
-            icon: { label: 'Icône', selector: { icon: {} } },
-            color: { label: 'Couleur (CSS ou couleur HA)', selector: { text: {} } },
+            entity: { label: 'Sensor', required: true, selector: { entity: { domain: ['sensor', 'input_number', 'number'] } } },
+            name: { label: 'Name', selector: { text: {} } },
+            icon: { label: 'Icon', selector: { icon: {} } },
+            color: { label: 'Color (CSS or HA color)', selector: { text: {} } },
           },
         },
       },
@@ -56,8 +56,8 @@ class M3MultiGraphCardEditor extends M3CardEditor {
         select: {
           mode: 'box', options: [
             { value: 'simple', label: 'Simple' },
-            { value: 'delta', label: 'Avec l’écart' },
-            { value: 'extrema', label: 'Avec min / max' },
+            { value: 'delta', label: 'With the difference' },
+            { value: 'extrema', label: 'With min / max' },
           ],
         },
       },
@@ -70,9 +70,9 @@ class M3MultiGraphCardEditor extends M3CardEditor {
     },
   ];
 
-  static labels = { entities: 'Capteurs', variant: 'Style', hours_to_show: 'Période', graph_height: 'Hauteur des courbes' };
+  static labels = { entities: 'Sensors', variant: 'Style', hours_to_show: 'Period', graph_height: 'Curves height' };
 
-  static helpers = { variant: 'L’écart compare les deux premiers capteurs' };
+  static helpers = { variant: 'The difference compares the first two sensors' };
 }
 
 class M3MultiGraphCard extends HTMLElement {
@@ -89,14 +89,14 @@ class M3MultiGraphCard extends HTMLElement {
 
   setConfig(config) {
     if (!config || !Array.isArray(config.entities) || !config.entities.length) {
-      throw new Error('m3-multi-graph-card : « entities » doit contenir au moins un capteur');
+      throw new Error('m3-multi-graph-card: "entities" must contain at least one sensor');
     }
     if (config.variant && !VARIANTS.includes(config.variant)) {
-      throw new Error(`m3-multi-graph-card : « variant » doit valoir ${VARIANTS.join(', ')}`);
+      throw new Error(`m3-multi-graph-card: "variant" must be one of ${VARIANTS.join(', ')}`);
     }
     // Les capteurs s'écrivent en liste d'objets ou simplement d'identifiants.
     const entities = config.entities.map((e) => (typeof e === 'string' ? { entity: e } : e));
-    if (entities.some((e) => !e.entity)) throw new Error('m3-multi-graph-card : chaque capteur a besoin d’une « entity »');
+    if (entities.some((e) => !e.entity)) throw new Error('m3-multi-graph-card: every sensor needs an "entity"');
     const previous = this._config;
     this._config = { variant: 'simple', hours_to_show: 24, graph_height: 55, ...config, entities };
     this.setAttribute('variant', this._config.variant);
@@ -298,7 +298,7 @@ if (!customElements.get('m3-multi-graph-card')) {
   window.customCards.push({
     type: 'm3-multi-graph-card',
     name: 'M3 Multi Graph',
-    description: 'Plusieurs capteurs sur un même graphique (ex. température dedans / dehors), écart ou min / max en option',
+    description: t(null, 'Several sensors on one graph (e.g. indoor / outdoor temperature), with an optional difference or min / max'),
     preview: true,
   });
 }

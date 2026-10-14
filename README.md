@@ -34,7 +34,9 @@ HACS adds the `/hacsfiles/material-home-cards/material-home-cards.js` resource b
 Every card has a **visual editor** and shows up in the card picker as "M3 …" (M3 Light Slider, M3 Thermostat,
 M3 Graph, M3 Button…). The YAML below still works.
 
-The user interface of the cards (state texts, editor labels) is in French.
+The cards follow Home Assistant's language: **English** and **French** are included, any other language falls
+back to English. Entity states use Home Assistant's own translations. To add a language, add a table to
+[`src/shared/i18n.js`](src/shared/i18n.js) — contributions are welcome.
 
 ## `m3-light-slider-card`
 
@@ -57,7 +59,7 @@ icon: mdi:lamp      # optional
 ## `m3-thermostat-card`
 
 Large target temperature between − / + buttons, with the mode and current temperature below
-("Chauffage • 23,1 °C"). The displayed target changes as soon as you tap; a single command is sent
+("Heat • 23.1 °C"). The displayed target changes as soon as you tap; a single command is sent
 0.6 s after the last tap.
 
 ```yaml
@@ -199,7 +201,8 @@ artwork_colors: true     # optional, colors taken from the artwork (default true
 
 ## `m3-person-card`
 
-Greeting: the photo and "Bonjour Laurent !" ("Bonsoir" from 6 pm) for the logged-in user, with their state below,
+Greeting: the photo and "Good morning, Laurent!" ("Good afternoon" / "Good evening" later in the day) for the
+logged-in user, with their state below,
 and the photos of the other people on the right. A person who is away turns grey; a dot shows who is at home.
 Without a photo, the avatar shows the initial. Tapping opens the more-info dialog.
 
@@ -208,7 +211,7 @@ type: custom:m3-person-card
 persons:                 # optional, otherwise everyone except you
   - person.laurent
   - person.alicia
-greeting: Hi there!      # optional, replaces "Bonjour <first name> !"
+greeting: Hi there!      # optional, replaces "Good morning, <first name>!"
 show_state: true         # optional (default true)
 show_dot: true           # optional, "at home" dot (default true)
 background: false        # optional, card background (default false)
@@ -261,7 +264,7 @@ color: orange                             # optional
 
 A popup that opens when the URL contains its `#hash`: a sheet sliding up from the bottom on mobile, a centered
 dialog on desktop. It can hold any cards. On the dashboard the card is invisible; in edit mode, a placeholder with
-an "Ouvrir" (open) button lets you find and test it.
+an "Open" button lets you find and test it.
 
 To open it, use a "Navigate" action to the hash, from any card:
 

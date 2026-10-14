@@ -55,14 +55,14 @@ class M3GraphCardEditor extends M3CardEditor {
   ];
 
   static labels = {
-    entity: 'Entité', name: 'Nom', icon: 'Icône', hours_to_show: 'Période',
-    graph_height: 'Hauteur de la courbe', color: 'Couleur de la courbe',
-    alert_below: 'Alerte sous', show_chevron: 'Afficher le chevron',
+    entity: 'Entity', name: 'Name', icon: 'Icon', hours_to_show: 'Period',
+    graph_height: 'Curve height', color: 'Curve color',
+    alert_below: 'Alert below', show_chevron: 'Show the chevron',
   };
 
   static helpers = {
-    color: 'Couleur CSS (#3b82f6, var(--...)). Vide : couleurs du thème',
-    alert_below: 'Couleurs d’alerte quand la valeur passe sous ce seuil (ex. 15 pour une batterie)',
+    color: 'CSS color (#3b82f6, var(--...)). Empty: theme colors',
+    alert_below: 'Alert colors when the value drops below this threshold (e.g. 15 for a battery)',
   };
 }
 
@@ -81,7 +81,7 @@ class M3GraphCard extends HTMLElement {
   }
 
   setConfig(config) {
-    if (!config || !config.entity) throw new Error('m3-graph-card : « entity » est obligatoire');
+    if (!config || !config.entity) throw new Error('m3-graph-card: "entity" is required');
     const previous = this._config;
     this._config = { hours_to_show: 24, graph_height: 60, show_chevron: false, ...config };
     if (!this.shadowRoot) this._build();
@@ -204,7 +204,7 @@ class M3GraphCard extends HTMLElement {
     // ha-state-icon choisit l'icône par défaut selon le capteur (batterie, température...) ; `icon` la remplace.
     Object.assign(this._els.icon, { hass: this._hass, stateObj: s, icon: c.icon });
     this._els.value.textContent = unavailable
-      ? 'Indisponible'
+      ? t(this._hass, 'Unavailable')
       : (this._hass?.formatEntityState?.(s) ?? `${s.state} ${s.attributes.unit_of_measurement ?? ''}`.trim());
 
     const paths = this._graphPaths();
@@ -241,7 +241,7 @@ if (!customElements.get('m3-graph-card')) {
   window.customCards.push({
     type: 'm3-graph-card',
     name: 'M3 Graph',
-    description: 'Valeur d’un capteur avec sa courbe d’historique lissée en fond',
+    description: t(null, 'A sensor value with its smoothed history curve in the background'),
     preview: true,
   });
 }

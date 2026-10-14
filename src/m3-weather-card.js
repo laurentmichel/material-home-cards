@@ -58,7 +58,7 @@ class M3WeatherCardEditor extends M3CardEditor {
         {
           name: 'forecast_type', selector: {
             select: { mode: 'dropdown', options: [
-              { value: 'hourly', label: 'Heure par heure' }, { value: 'daily', label: 'Jour par jour' }, { value: 'none', label: 'Aucune' },
+              { value: 'hourly', label: 'Hourly' }, { value: 'daily', label: 'Daily' }, { value: 'none', label: 'None' },
             ] },
           },
         },
@@ -67,7 +67,7 @@ class M3WeatherCardEditor extends M3CardEditor {
     },
   ];
 
-  static labels = { entity: 'Météo', name: 'Nom', forecast_type: 'Prévisions', forecast_slots: 'Nombre de prévisions' };
+  static labels = { entity: 'Weather', name: 'Name', forecast_type: 'Forecast', forecast_slots: 'Number of forecasts' };
 }
 
 class M3WeatherCard extends HTMLElement {
@@ -81,7 +81,7 @@ class M3WeatherCard extends HTMLElement {
   }
 
   setConfig(config) {
-    if (!config || !config.entity) throw new Error('m3-weather-card : « entity » est obligatoire');
+    if (!config || !config.entity) throw new Error('m3-weather-card: "entity" is required');
     this._config = { forecast_type: 'hourly', forecast_slots: 8, ...config };
     this.toggleAttribute('no-forecast', this._config.forecast_type === 'none');
     if (!this.shadowRoot) this._build();
@@ -170,7 +170,7 @@ class M3WeatherCard extends HTMLElement {
     const s = this._stateObj;
     const e = this._els;
     if (!s) {
-      e.condition.textContent = 'Météo introuvable';
+      e.condition.textContent = t(this._hass, 'Weather not found');
       return;
     }
     const a = s.attributes;
@@ -182,7 +182,7 @@ class M3WeatherCard extends HTMLElement {
     e.temp.textContent = this._num(a.temperature, '°');
     const details = [];
     if (a.apparent_temperature != null && Math.round(a.apparent_temperature) !== Math.round(a.temperature)) {
-      details.push(`Ressenti ${this._num(a.apparent_temperature, '°')}`);
+      details.push(t(this._hass, 'Feels like {temp}', { temp: this._num(a.apparent_temperature, '°') }));
     }
     if (a.humidity != null) details.push(`${this._num(a.humidity)} %`);
     if (a.wind_speed != null) details.push(`${this._num(a.wind_speed)} ${a.wind_speed_unit ?? 'km/h'}`);
@@ -201,7 +201,7 @@ class M3WeatherCard extends HTMLElement {
       when.className = 'when';
       when.textContent = daily
         ? date.toLocaleDateString(lang, { weekday: 'short' }).replace('.', '')
-        : `${date.getHours()} h`;
+        : date.toLocaleTimeString(lang, { hour: 'numeric' });
       const icon = document.createElement('ha-icon');
       icon.icon = this._icon(f.condition, daily ? null : date);
       icon.style.setProperty('--m3-slot', WEATHER[f.condition]?.[1] ?? 'inherit');
@@ -229,7 +229,7 @@ if (!customElements.get('m3-weather-card')) {
   window.customCards.push({
     type: 'm3-weather-card',
     name: 'M3 Weather',
-    description: 'Météo Material 3 : conditions actuelles teintées selon le temps et prévisions heure par heure ou jour par jour',
+    description: t(null, 'Material 3 weather: current conditions tinted by the weather, with an hourly or daily forecast'),
     preview: true,
   });
 }

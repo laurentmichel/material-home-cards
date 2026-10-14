@@ -52,13 +52,13 @@ class M3ProgressCardEditor extends M3CardEditor {
   ];
 
   static labels = {
-    entity: 'État de la tâche', name: 'Nom', icon: 'Icône', progress: 'Progression (%)', end_time: 'Heure de fin',
-    remaining: 'Temps restant', image: 'Image', color: 'Couleur',
+    entity: 'Task state', name: 'Name', icon: 'Icon', progress: 'Progress (%)', end_time: 'End time',
+    remaining: 'Time left', image: 'Image', color: 'Color',
   };
 
   static helpers = {
-    end_time: 'Capteur horodatage : le temps restant en est déduit',
-    remaining: 'Sinon : capteur de durée (min, h ou s)',
+    end_time: 'Timestamp sensor: the time left is derived from it',
+    remaining: 'Otherwise: duration sensor (min, h or s)',
   };
 }
 
@@ -74,7 +74,7 @@ class M3ProgressCard extends HTMLElement {
   }
 
   setConfig(config) {
-    if (!config || !config.entity) throw new Error('m3-progress-card : « entity » est obligatoire');
+    if (!config || !config.entity) throw new Error('m3-progress-card: "entity" is required');
     this._config = config;
     if (!this.shadowRoot) this._build();
     this._key = null;
@@ -144,7 +144,7 @@ class M3ProgressCard extends HTMLElement {
 
     const e = this._els;
     e.name.textContent = c.name ?? s?.attributes.friendly_name ?? c.entity;
-    e.state.textContent = !s ? 'Introuvable' : (this._hass.formatEntityState?.(s) ?? s.state);
+    e.state.textContent = !s ? t(this._hass, 'Not found') : (this._hass.formatEntityState?.(s) ?? s.state);
     Object.assign(e.icon, { hass: this._hass, stateObj: s, icon: c.icon });
 
     const picture = image?.attributes.entity_picture;
@@ -164,11 +164,12 @@ class M3ProgressCard extends HTMLElement {
     const left = remaining && remaining.minutes > 0 ? formatDuration(remaining.minutes) : null;
     this.toggleAttribute('no-times', !left);
     if (left) {
-      e.left.textContent = `Reste ${left}`;
+      e.left.textContent = t(this._hass, '{time} left', { time: left });
       const lang = this._hass.locale?.language ?? 'fr';
       const sameDay = remaining.end.toDateString() === new Date().toDateString();
       const time = remaining.end.toLocaleTimeString(lang, { hour: '2-digit', minute: '2-digit' });
-      e.end.textContent = sameDay ? `Fin à ${time}` : `Fin ${remaining.end.toLocaleDateString(lang, { weekday: 'short' })} à ${time}`;
+      const day = remaining.end.toLocaleDateString(lang, { weekday: 'short' });
+      e.end.textContent = sameDay ? t(this._hass, 'Ends at {time}', { time }) : t(this._hass, 'Ends {day} at {time}', { day, time });
     }
 
     this._card.style.setProperty('--m3-accent', c.color ? cssColor(c.color) : 'var(--md-sys-color-primary, var(--primary-color))');
@@ -187,7 +188,7 @@ if (!customElements.get('m3-progress-card')) {
   window.customCards.push({
     type: 'm3-progress-card',
     name: 'M3 Progress',
-    description: 'Tâche en cours (impression 3D, lave-linge...) : pourcentage, barre de progression, temps restant et heure de fin',
+    description: t(null, 'Task in progress (3D print, washing machine...): percentage, progress bar, time left and end time'),
     preview: true,
   });
 }

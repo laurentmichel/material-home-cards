@@ -36,7 +36,12 @@ ha-card {
 `;
 
 // Bonjour le jour, bonsoir à partir de 18 h.
-const greetingWord = (date = new Date()) => (date.getHours() >= 18 || date.getHours() < 4 ? 'Bonsoir' : 'Bonjour');
+// Matin, après-midi ou soir selon l'heure.
+const greetingKey = (date = new Date()) => {
+  const h = date.getHours();
+  if (h >= 18 || h < 4) return 'Good evening, {name}!';
+  return h < 12 ? 'Good morning, {name}!' : 'Good afternoon, {name}!';
+};
 
 class M3PersonCardEditor extends M3CardEditor {
   static schema = [
@@ -52,13 +57,13 @@ class M3PersonCardEditor extends M3CardEditor {
   ];
 
   static labels = {
-    persons: 'Autres personnes', greeting: 'Message', show_state: 'Afficher l’état',
-    show_dot: 'Pastille « à la maison »', background: 'Fond de carte',
+    persons: 'Other people', greeting: 'Message', show_state: 'Show the state',
+    show_dot: '"At home" dot', background: 'Card background',
   };
 
   static helpers = {
-    persons: 'Vide : toutes les personnes sauf vous',
-    greeting: 'Vide : « Bonjour » ou « Bonsoir » suivi du prénom',
+    persons: 'Empty: everyone except you',
+    greeting: 'Empty: "Good morning" or "Good evening" followed by the first name',
   };
 }
 
@@ -128,13 +133,13 @@ class M3PersonCard extends HTMLElement {
       .filter((e) => e !== this._me && states[e]);
 
     // Ne redessine que si une personne ou l'heure du message a changé.
-    const key = [this._me, ...others].map((e) => e && states[e]?.last_updated).join() + greetingWord() + (this._hass.user?.name ?? '');
+    const key = [this._me, ...others].map((e) => e && states[e]?.last_updated).join() + greetingKey() + (this._hass.user?.name ?? '');
     if (key === this._key) return;
     this._key = key;
 
     const me = this._me && states[this._me];
     const firstName = (this._hass.user?.name ?? me?.attributes.friendly_name ?? '').split(' ')[0];
-    this._els.greeting.textContent = c.greeting ?? `${greetingWord()} ${firstName} !`;
+    this._els.greeting.textContent = c.greeting ?? t(this._hass, greetingKey(), { name: firstName });
     this._els.state.textContent = me ? this._stateText(me) : '';
     this._fillAvatar(this._els.me, me, firstName);
 
@@ -156,8 +161,8 @@ class M3PersonCard extends HTMLElement {
   }
 
   _stateText(s) {
-    if (s.state === 'home') return 'À la maison';
-    if (s.state === 'not_home') return 'Hors de la maison';
+    if (s.state === 'home') return t(this._hass, 'At home');
+    if (s.state === 'not_home') return t(this._hass, 'Away');
     return this._hass.formatEntityState?.(s) ?? s.state;
   }
 
@@ -193,7 +198,7 @@ if (!customElements.get('m3-person-card')) {
   window.customCards.push({
     type: 'm3-person-card',
     name: 'M3 Person',
-    description: 'Accueil Material 3 : « Bonjour » avec votre avatar, et les autres personnes de la maison',
+    description: t(null, 'Material 3 greeting: "Good morning" with your avatar, and the other people in the house'),
     preview: true,
   });
 }

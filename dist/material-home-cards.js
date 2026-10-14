@@ -1,5 +1,5 @@
-/*! Material Home Cards v1.16.0 — https://github.com/laurentmichel/material-home-cards */
-console.info('%c MATERIAL-HOME-CARDS %c v1.16.0 ', 'color:#fff;background:#6750a4;font-weight:700', 'color:#6750a4;background:#eaddff');
+/*! Material Home Cards v1.17.0 — https://github.com/laurentmichel/material-home-cards */
+console.info('%c MATERIAL-HOME-CARDS %c v1.17.0 ', 'color:#fff;background:#6750a4;font-weight:700', 'color:#6750a4;background:#eaddff');
 
 // ---- shared/color.js ----
 // Couleurs nommées de HA (amber, blue...) → variables du thème ; le reste (hex, rgb) tel quel.
@@ -43,14 +43,21 @@ class M3CardEditor extends HTMLElement {
     if (!this._form) {
       const { labels, helpers } = this.constructor;
       this._form = document.createElement('ha-form');
-      this._form.computeLabel = (s) => labels[s.name] ?? s.name;
-      this._form.computeHelper = (s) => helpers[s.name];
+      // Libellés écrits en anglais, traduits dans la langue de Home Assistant.
+      this._form.computeLabel = (s) => (labels[s.name] ? t(this._hass, labels[s.name]) : s.name);
+      this._form.computeHelper = (s) => (helpers[s.name] ? t(this._hass, helpers[s.name]) : undefined);
       this._form.addEventListener('value-changed', (e) => this._changed(e.detail.value));
       this.appendChild(this._form);
     }
     this._form.hass = this._hass;
     this._form.data = this._config;
-    this._form.schema = this.constructor.schema;
+    // Schéma traduit une seule fois par langue : un nouveau schéma à chaque mise à jour ferait tout redessiner.
+    const lang = langOf(this._hass);
+    if (lang !== this._lang) {
+      this._lang = lang;
+      this._schema = translateSchema(this._hass, this.constructor.schema);
+    }
+    this._form.schema = this._schema;
   }
 
   // Les champs vidés sont retirés du YAML plutôt qu'enregistrés comme chaînes vides.
@@ -62,6 +69,31 @@ class M3CardEditor extends HTMLElement {
     this._config = config;
     this.dispatchEvent(new CustomEvent('config-changed', { detail: { config }, bubbles: true, composed: true }));
   }
+}
+
+// Titres de sections, libellés d'options et champs d'objets du schéma, traduits.
+function translateSchema(hass, schema) {
+  const tr = (v) => (typeof v === 'string' ? t(hass, v) : v);
+  return schema.map((item) => {
+    const out = { ...item };
+    if (out.title) out.title = tr(out.title);
+    if (out.schema) out.schema = translateSchema(hass, out.schema);
+    const select = out.selector?.select;
+    if (select?.options) {
+      out.selector = { ...out.selector, select: { ...select, options: select.options.map((o) => (o.label ? { ...o, label: tr(o.label) } : o)) } };
+    }
+    const object = out.selector?.object;
+    if (object?.fields) {
+      const fields = Object.fromEntries(Object.entries(object.fields).map(([k, f]) => {
+        const field = { ...f, label: tr(f.label) };
+        const options = f.selector?.select?.options;
+        if (options) field.selector = { select: { ...f.selector.select, options: options.map((o) => ({ ...o, label: tr(o.label) })) } };
+        return [k, field];
+      }));
+      out.selector = { ...out.selector, object: { ...object, fields } };
+    }
+    return out;
+  });
 }
 
 const defineEditor = (tag, editorClass) => {
@@ -155,6 +187,199 @@ function bucketize(samples, start, end) {
   return out;
 }
 
+// ---- shared/i18n.js ----
+// Traductions : les textes sont écrits en anglais dans le code et traduits ici selon la langue de Home Assistant.
+// Une langue absente de TRANSLATIONS affiche l'anglais. Pour en ajouter une : une table { 'texte anglais': 'traduction' }.
+
+const FR = {
+  "\"At home\" dot": "Pastille « à la maison »",
+  "\"Turn off\" button": "Bouton « Éteindre »",
+  "0 or empty: never closes automatically": "0 ou vide : pas de fermeture automatique",
+  "A sensor value with its smoothed history curve in the background": "Valeur d’un capteur avec sa courbe d’historique lissée en fond",
+  "Active when (template)": "Actif si (template)",
+  "Alert below": "Alerte sous",
+  "Alert below (value)": "Alerte sous (valeur)",
+  "Alert colors when the value drops below this threshold (e.g. 15 for a battery)": "Couleurs d’alerte quand la valeur passe sous ce seuil (ex. 15 pour une batterie)",
+  "App / source": "Application / source",
+  "Appearance": "Apparence",
+  "Artwork colors": "Couleurs de la pochette",
+  "At home": "À la maison",
+  "Auto close": "Fermeture automatique",
+  "Automatic": "Automatique",
+  "Away": "Hors de la maison",
+  "Backdrop blur": "Flou du fond",
+  "Battery": "Batterie",
+  "Behavior": "Comportement",
+  "Button group": "Groupe de boutons",
+  "Card background": "Fond de carte",
+  "Carousel": "Carrousel",
+  "Chevron": "Flèche",
+  "Chip on the right (text or template)": "Pastille à droite (texte ou template)",
+  "Close": "Fermer",
+  "Close when tapping outside": "Fermer en appuyant à côté",
+  "Color": "Couleur",
+  "Color (CSS or HA color)": "Couleur (CSS ou couleur HA)",
+  "Color when active": "Couleur quand c’est actif",
+  "Content (template)": "Contenu (template)",
+  "Corner radius": "Arrondi",
+  "Corners": "Coins",
+  "CSS color (#3b82f6, var(--...)). Empty: theme colors": "Couleur CSS (#3b82f6, var(--...)). Vide : couleurs du thème",
+  "CSS color, empty: green": "Couleur CSS, vide : vert",
+  "Curve color": "Couleur de la courbe",
+  "Curve height": "Hauteur de la courbe",
+  "Curves height": "Hauteur des courbes",
+  "Daily": "Jour par jour",
+  "Displayed attribute": "Attribut affiché",
+  "Double tap": "Double appui",
+  "E.g. #living-room: open it with a \"Navigate\" action to #living-room. The popup's cards are edited in YAML (cards:)": "Ex. #salon : ouvrir avec une action « Naviguer » vers #salon. Les cartes de la popup se modifient en YAML (cards:)",
+  "Empty: \"Good morning\" or \"Good evening\" followed by the first name": "Vide : « Bonjour » ou « Bonsoir » suivi du prénom",
+  "Empty: action suited to the entity (turn on, run the scene, press…)": "Vide : action adaptée à l’entité (allumer, lancer la scène, appuyer…)",
+  "Empty: based on the entity state. E.g. {{ is_state('vacuum.robot', 'cleaning') }}": "Vide : selon l’état de l’entité. Ex. {{ is_state('vacuum.robot', 'cleaning') }}",
+  "Empty: disabled, a single tap stays instant": "Vide : désactivé, l’appui simple reste instantané",
+  "Empty: everyone except you": "Vide : toutes les personnes sauf vous",
+  "Empty: more-info dialog": "Vide : fenêtre de détails",
+  "Empty: state color, like native badges": "Vide : couleur de l’état, comme les badges natifs",
+  "Empty: theme primary color": "Vide : couleur primaire du thème",
+  "Empty: turn the light on / off": "Vide : allumer / éteindre la lumière",
+  "End time": "Heure de fin",
+  "Ends at {time}": "Fin à {time}",
+  "Ends {day} at {time}": "Fin {day} à {time}",
+  "Entity": "Entité",
+  "Feels like {temp}": "Ressenti {temp}",
+  "For example \"Navigate\" to #living-room to open a popup. Empty: more-info dialog": "Par exemple « Naviguer » vers #salon pour ouvrir une popup. Vide : fenêtre de détails",
+  "Forecast": "Prévisions",
+  "Good afternoon, {name}!": "Bonjour {name} !",
+  "Good evening, {name}!": "Bonsoir {name} !",
+  "Good morning, {name}!": "Bonjour {name} !",
+  "Header": "En-tête",
+  "Hourly": "Heure par heure",
+  "Humidity": "Humidité",
+  "Icon": "Icône",
+  "Icon when off": "Icône éteint",
+  "Icon when on": "Icône allumé",
+  "Label (two lines)": "Libellé (deux lignes)",
+  "Large": "Grands",
+  "Lawn color": "Couleur de la pelouse",
+  "Leave empty so the icon follows the mode": "Laisser vide pour que l’icône suive le mode",
+  "Light": "Lumière",
+  "Living room": "Salon",
+  "Loading the map…": "Chargement de la carte…",
+  "Long press": "Appui long",
+  "Lower the target": "Baisser la consigne",
+  "Map camera": "Caméra de la carte",
+  "Map unavailable": "Carte indisponible",
+  "Material 3 badge: tonal chip, pill with a dot or two lines": "Badge Material 3 : chip tonal, pilule avec pastille ou deux lignes",
+  "Material 3 brightness slider tinted with the light color": "Slider de luminosité Material 3 teinté avec la couleur de la lumière",
+  "Material 3 button for any entity, with an action suited to the entity type": "Bouton Material 3 pour n’importe quelle entité, action adaptée au type d’entité",
+  "Material 3 Expressive list: stacked rows with a switch, state or chevron on the right": "Liste Material 3 Expressive : lignes empilées avec interrupteur, état ou flèche à droite",
+  "Material 3 greeting: \"Good morning\" with your avatar, and the other people in the house": "Accueil Material 3 : « Bonjour » avec votre avatar, et les autres personnes de la maison",
+  "Material 3 media player: artwork, progress, controls, volume and artwork colors": "Lecteur multimédia Material 3 : pochette, progression, commandes, volume et couleurs de la pochette",
+  "Material 3 popup opened by a #hash, holding any cards": "Popup Material 3 ouverte par un #hash, contenant n’importe quelles cartes",
+  "Material 3 room: temperature, humidity, light color and heating": "Pièce Material 3 : température, humidité, couleur de la lumière et chauffage en cours",
+  "Material 3 scene selector: button group, tiles or carousel, with the active scene highlighted": "Sélecteur de scènes Material 3 : groupe de boutons, tuiles ou carrousel, scène active mise en avant",
+  "Material 3 thermostat with an adjustable target and instant feedback": "Thermostat Material 3 avec consigne réglable et affichage immédiat",
+  "Material 3 weather: current conditions tinted by the weather, with an hourly or daily forecast": "Météo Material 3 : conditions actuelles teintées selon le temps et prévisions heure par heure ou jour par jour",
+  "Max height": "Hauteur max.",
+  "Medium": "Moyens",
+  "Mode set by the on button (default: heat)": "Mode activé par le bouton Marche (par défaut : chauffage)",
+  "Mode when turned on": "Mode au démarrage",
+  "Mute": "Muet",
+  "Name": "Nom",
+  "Name and state": "Nom et état",
+  "Name only": "Nom seulement",
+  "Name, state and switch": "Nom, état et interrupteur",
+  "Next": "Suivant",
+  "None": "Aucune",
+  "Not found": "Introuvable",
+  "Nothing": "Rien",
+  "Number of forecasts": "Nombre de prévisions",
+  "Off": "Arrêt",
+  "Offline": "Hors ligne",
+  "On": "Marche",
+  "On / off": "Allumé / éteint",
+  "On the right": "À droite",
+  "On the right, \"Automatic\": a switch for things that turn on, a chevron for navigation": "À droite, « Automatique » : interrupteur pour ce qui s’allume, flèche pour une navigation",
+  "Open": "Ouvrir",
+  "Opening hash": "Hash d’ouverture",
+  "Optional: adds a button that turns this entity off; when it is off, no scene is active": "Facultatif : ajoute un bouton qui éteint cette entité ; éteinte, aucune scène n’est active",
+  "Optional: its state is shown in a chip on the map": "Facultatif : son état s’affiche dans une pastille sur la carte",
+  "Other people": "Autres personnes",
+  "Otherwise: duration sensor (min, h or s)": "Sinon : capteur de durée (min, h ou s)",
+  "Period": "Période",
+  "Pill": "Pilule",
+  "Play / pause": "Lecture / pause",
+  "Player": "Lecteur",
+  "Previous": "Précédent",
+  "Progress": "Progression",
+  "Progress (%)": "Progression (%)",
+  "Raise the target": "Monter la consigne",
+  "Repeat": "Répéter",
+  "Replaces the state; icon, color and label also accept a template": "Remplace l’état ; icône, couleur et libellé acceptent aussi un template",
+  "Robot map (Dreame mower...) redrawn in Material 3 colors, with its state": "Carte d’un robot (tondeuse Dreame...) redessinée aux couleurs Material 3, avec son état",
+  "Rows": "Lignes",
+  "Running": "En cours",
+  "Scene": "Scène",
+  "Scenes": "Scènes",
+  "Sensor": "Capteur",
+  "Sensors": "Capteurs",
+  "Settings": "Réglages",
+  "Several sensors on one graph (e.g. indoor / outdoor temperature), with an optional difference or min / max": "Plusieurs capteurs sur un même graphique (ex. température dedans / dehors), écart ou min / max en option",
+  "Show the chevron": "Afficher le chevron",
+  "Show the header": "Afficher l’en-tête",
+  "Show the state": "Afficher l’état",
+  "Shuffle": "Aléatoire",
+  "Small": "Petits",
+  "State": "État",
+  "Step of the − / + buttons": "Pas des boutons − / +",
+  "Subtitle (empty: entity state)": "Sous-titre (vide : état de l’entité)",
+  "Subtitle when active": "Sous-titre quand c’est actif",
+  "Subtitle when inactive": "Sous-titre quand c’est inactif",
+  "Swipe distance": "Distance de glissement",
+  "Switch": "Interrupteur",
+  "Tap": "Appui",
+  "Task in progress (3D print, washing machine...): percentage, progress bar, time left and end time": "Tâche en cours (impression 3D, lave-linge...) : pourcentage, barre de progression, temps restant et heure de fin",
+  "Task state": "État de la tâche",
+  "Temperature": "Température",
+  "Text when off": "Texte éteint",
+  "Text when on": "Texte allumé",
+  "The background takes its color when it is on": "Le fond prend sa couleur quand elle est allumée",
+  "The difference compares the first two sensors": "L’écart compare les deux premiers capteurs",
+  "The icon becomes a flame while the heating is on; its temperature is used when no sensor is set": "L’icône devient une flamme quand le chauffage est en marche ; sa température sert si aucun capteur n’est choisi",
+  "Tiles": "Tuiles",
+  "Time left": "Temps restant",
+  "Timestamp sensor: the time left is derived from it": "Capteur horodatage : le temps restant en est déduit",
+  "Tint active rows": "Teinter les lignes actives",
+  "Title": "Titre",
+  "Tonal chip": "Chip tonal",
+  "Turn off": "Éteindre",
+  "Turn on / off": "Allumer / éteindre",
+  "Two lines": "Deux lignes",
+  "Unavailable": "Indisponible",
+  "Weather": "Météo",
+  "Weather not found": "Météo introuvable",
+  "Width (desktop)": "Largeur (ordinateur)",
+  "Width (mobile)": "Largeur (mobile)",
+  "With min / max": "Avec min / max",
+  "With the difference": "Avec l’écart",
+  "{count} card": "{count} carte",
+  "{count} cards": "{count} cartes",
+  "{time} left": "Reste {time}",
+};
+
+const TRANSLATIONS = { fr: FR };
+
+// Langue de l'utilisateur : celle de Home Assistant, sinon celle de la page ou du navigateur.
+const langOf = (hass) => String(
+  hass?.locale?.language || hass?.language || document.documentElement.lang || navigator.language || 'en',
+).split('-')[0].toLowerCase();
+
+// Texte traduit ; les {variables} sont remplacées par `vars`.
+function t(hass, text, vars) {
+  let out = TRANSLATIONS[langOf(hass)]?.[text] ?? text;
+  if (vars) for (const [key, value] of Object.entries(vars)) out = out.replaceAll(`{${key}}`, value);
+  return out;
+}
+
 // ---- shared/template.js ----
 // Templates Jinja rendus par Home Assistant et mis à jour en direct (abonnement render_template).
 const isTemplate = (v) => typeof v === 'string' && /\{[{%]/.test(v);
@@ -237,9 +462,9 @@ class M3BadgeEditor extends M3CardEditor {
       name: 'variant', selector: {
         select: {
           mode: 'box', options: [
-            { value: 'chip', label: 'Chip tonal' },
-            { value: 'pill', label: 'Pilule' },
-            { value: 'two-line', label: 'Deux lignes' },
+            { value: 'chip', label: 'Tonal chip' },
+            { value: 'pill', label: 'Pill' },
+            { value: 'two-line', label: 'Two lines' },
           ],
         },
       },
@@ -257,14 +482,14 @@ class M3BadgeEditor extends M3CardEditor {
   ];
 
   static labels = {
-    entity: 'Entité', variant: 'Style', icon: 'Icône', color: 'Couleur', label: 'Libellé (deux lignes)',
-    attribute: 'Attribut affiché', content: 'Contenu (template)', tap_action: 'Appui',
+    entity: 'Entity', variant: 'Style', icon: 'Icon', color: 'Color', label: 'Label (two lines)',
+    attribute: 'Displayed attribute', content: 'Content (template)', tap_action: 'Tap',
   };
 
   static helpers = {
-    color: 'Vide : couleur de l’état, comme les badges natifs',
-    content: 'Remplace l’état ; icône, couleur et libellé acceptent aussi un template',
-    tap_action: 'Vide : fenêtre de détails',
+    color: 'Empty: state color, like native badges',
+    content: 'Replaces the state; icon, color and label also accept a template',
+    tap_action: 'Empty: more-info dialog',
   };
 }
 
@@ -280,9 +505,9 @@ class M3Badge extends HTMLElement {
   }
 
   setConfig(config) {
-    if (!config) throw new Error('m3-badge : configuration invalide');
+    if (!config) throw new Error('m3-badge: invalid configuration');
     if (config.variant && !VARIANTS.includes(config.variant)) {
-      throw new Error(`m3-badge : « variant » doit valoir ${VARIANTS.join(', ')}`);
+      throw new Error(`m3-badge: "variant" must be one of ${VARIANTS.join(', ')}`);
     }
     this._config = { variant: 'chip', ...config };
     this._tpl = {};
@@ -354,7 +579,7 @@ class M3Badge extends HTMLElement {
 
     let value = this._get('content');
     if (value == null && !isTemplate(c.content)) {
-      if (!s) value = c.entity ? 'Introuvable' : '';
+      if (!s) value = c.entity ? t(this._hass, 'Not found') : '';
       else if (c.attribute) value = hass?.formatEntityAttributeValue?.(s, c.attribute) ?? s.attributes[c.attribute];
       else value = hass?.formatEntityState?.(s) ?? s.state;
     }
@@ -395,7 +620,7 @@ if (!customElements.get('m3-badge')) {
   window.customBadges.push({
     type: 'm3-badge',
     name: 'M3 Badge',
-    description: 'Badge Material 3 : chip tonal, pilule avec pastille ou deux lignes',
+    description: t(null, 'Material 3 badge: tonal chip, pill with a dot or two lines'),
     preview: true,
   });
 }
@@ -450,7 +675,7 @@ class M3ButtonCardEditor extends M3CardEditor {
       ],
     },
     {
-      type: 'expandable', name: '', title: 'Allumé / éteint', icon: 'mdi:toggle-switch-outline', schema: [
+      type: 'expandable', name: '', title: 'On / off', icon: 'mdi:toggle-switch-outline', schema: [
         {
           type: 'grid', name: '', schema: [
             { name: 'icon_on', selector: { icon: {} }, context: { icon_entity: 'entity' } },
@@ -475,18 +700,18 @@ class M3ButtonCardEditor extends M3CardEditor {
   ];
 
   static labels = {
-    entity: 'Entité', name: 'Nom', icon: 'Icône', icon_on: 'Icône allumé', icon_off: 'Icône éteint',
-    text_on: 'Texte allumé', text_off: 'Texte éteint', show_state: 'Afficher l’état',
-    tap_action: 'Appui', hold_action: 'Appui long', double_tap_action: 'Double appui',
-    color: 'Couleur quand c’est actif', active: 'Actif si (template)', chip: 'Pastille à droite (texte ou template)',
+    entity: 'Entity', name: 'Name', icon: 'Icon', icon_on: 'Icon when on', icon_off: 'Icon when off',
+    text_on: 'Text when on', text_off: 'Text when off', show_state: 'Show the state',
+    tap_action: 'Tap', hold_action: 'Long press', double_tap_action: 'Double tap',
+    color: 'Color when active', active: 'Active when (template)', chip: 'Chip on the right (text or template)',
   };
 
   static helpers = {
-    tap_action: 'Vide : action adaptée à l’entité (allumer, lancer la scène, appuyer…)',
-    hold_action: 'Vide : fenêtre de détails',
-    double_tap_action: 'Vide : désactivé, l’appui simple reste instantané',
-    color: 'Vide : couleur primaire du thème',
-    active: 'Vide : selon l’état de l’entité. Ex. {{ is_state(\'vacuum.robot\', \'cleaning\') }}',
+    tap_action: 'Empty: action suited to the entity (turn on, run the scene, press…)',
+    hold_action: 'Empty: more-info dialog',
+    double_tap_action: 'Empty: disabled, a single tap stays instant',
+    color: 'Empty: theme primary color',
+    active: 'Empty: based on the entity state. E.g. {{ is_state(\'vacuum.robot\', \'cleaning\') }}',
   };
 }
 
@@ -502,7 +727,7 @@ class M3ButtonCard extends HTMLElement {
   }
 
   setConfig(config) {
-    if (!config || !config.entity) throw new Error('m3-button-card : « entity » est obligatoire');
+    if (!config || !config.entity) throw new Error('m3-button-card: "entity" is required');
     this._config = { show_state: true, ...config };
     this._tpl = {};
     if (!this.shadowRoot) this._build();
@@ -549,7 +774,7 @@ class M3ButtonCard extends HTMLElement {
         <div class="icon"><ha-state-icon></ha-state-icon></div>
         <div class="text"><div class="name"></div><div class="state"></div></div>
         <span class="chip"></span>
-        <ha-icon class="badge" icon="mdi:alert-circle-outline" title="Hors ligne"></ha-icon>
+        <ha-icon class="badge" icon="mdi:alert-circle-outline" title="${t(this._hass, 'Offline')}"></ha-icon>
       </ha-card>`;
     this._card = root.querySelector('ha-card');
     this._els = {
@@ -601,7 +826,7 @@ class M3ButtonCard extends HTMLElement {
   }
 
   _stateText(s, active, offline) {
-    if (offline) return 'Hors ligne';
+    if (offline) return t(this._hass, 'Offline');
     const c = this._config;
     if (active && c.text_on) return c.text_on;
     if (!active && c.text_off) return c.text_off;
@@ -610,7 +835,7 @@ class M3ButtonCard extends HTMLElement {
     const [domain] = s.entity_id.split('.');
     // L'état d'une scène ou d'un bouton est la date du dernier déclenchement : rien à afficher.
     if (['scene', 'button', 'input_button'].includes(domain)) return null;
-    if (domain === 'script') return s.state === 'on' ? 'En cours' : null;
+    if (domain === 'script') return s.state === 'on' ? t(this._hass, 'Running') : null;
     if (domain === 'climate' && s.attributes.current_temperature != null) {
       return `${state} • ${format(s, 'current_temperature')}`;
     }
@@ -692,7 +917,7 @@ if (!customElements.get('m3-button-card')) {
   window.customCards.push({
     type: 'm3-button-card',
     name: 'M3 Button',
-    description: 'Bouton Material 3 pour n’importe quelle entité, action adaptée au type d’entité',
+    description: t(null, 'Material 3 button for any entity, with an action suited to the entity type'),
     preview: true,
   });
 }
@@ -757,14 +982,14 @@ class M3GraphCardEditor extends M3CardEditor {
   ];
 
   static labels = {
-    entity: 'Entité', name: 'Nom', icon: 'Icône', hours_to_show: 'Période',
-    graph_height: 'Hauteur de la courbe', color: 'Couleur de la courbe',
-    alert_below: 'Alerte sous', show_chevron: 'Afficher le chevron',
+    entity: 'Entity', name: 'Name', icon: 'Icon', hours_to_show: 'Period',
+    graph_height: 'Curve height', color: 'Curve color',
+    alert_below: 'Alert below', show_chevron: 'Show the chevron',
   };
 
   static helpers = {
-    color: 'Couleur CSS (#3b82f6, var(--...)). Vide : couleurs du thème',
-    alert_below: 'Couleurs d’alerte quand la valeur passe sous ce seuil (ex. 15 pour une batterie)',
+    color: 'CSS color (#3b82f6, var(--...)). Empty: theme colors',
+    alert_below: 'Alert colors when the value drops below this threshold (e.g. 15 for a battery)',
   };
 }
 
@@ -783,7 +1008,7 @@ class M3GraphCard extends HTMLElement {
   }
 
   setConfig(config) {
-    if (!config || !config.entity) throw new Error('m3-graph-card : « entity » est obligatoire');
+    if (!config || !config.entity) throw new Error('m3-graph-card: "entity" is required');
     const previous = this._config;
     this._config = { hours_to_show: 24, graph_height: 60, show_chevron: false, ...config };
     if (!this.shadowRoot) this._build();
@@ -906,7 +1131,7 @@ class M3GraphCard extends HTMLElement {
     // ha-state-icon choisit l'icône par défaut selon le capteur (batterie, température...) ; `icon` la remplace.
     Object.assign(this._els.icon, { hass: this._hass, stateObj: s, icon: c.icon });
     this._els.value.textContent = unavailable
-      ? 'Indisponible'
+      ? t(this._hass, 'Unavailable')
       : (this._hass?.formatEntityState?.(s) ?? `${s.state} ${s.attributes.unit_of_measurement ?? ''}`.trim());
 
     const paths = this._graphPaths();
@@ -943,7 +1168,7 @@ if (!customElements.get('m3-graph-card')) {
   window.customCards.push({
     type: 'm3-graph-card',
     name: 'M3 Graph',
-    description: 'Valeur d’un capteur avec sa courbe d’historique lissée en fond',
+    description: t(null, 'A sensor value with its smoothed history curve in the background'),
     preview: true,
   });
 }
@@ -999,7 +1224,7 @@ class M3LightSliderCardEditor extends M3CardEditor {
     },
   ];
 
-  static labels = { entity: 'Entité', name: 'Nom', icon: 'Icône' };
+  static labels = { entity: 'Entity', name: 'Name', icon: 'Icon' };
 }
 
 class M3LightSliderCard extends HTMLElement {
@@ -1011,7 +1236,7 @@ class M3LightSliderCard extends HTMLElement {
 
   setConfig(config) {
     if (!config || !config.entity || !config.entity.startsWith('light.')) {
-      throw new Error('m3-light-slider-card : « entity » doit être une entité light.*');
+      throw new Error('m3-light-slider-card: "entity" must be a light.* entity');
     }
     this._config = config;
     if (!this.shadowRoot) this._build();
@@ -1084,7 +1309,7 @@ class M3LightSliderCard extends HTMLElement {
 
     this._els.name.textContent = this._config.name ?? a.friendly_name ?? this._config.entity;
     this._els.icon.icon = this._config.icon ?? a.icon ?? (on ? 'mdi:lightbulb' : 'mdi:lightbulb-outline');
-    this._els.state.textContent = unavailable ? 'Indisponible' : on ? 'Allumée' : 'Éteinte';
+    this._els.state.textContent = unavailable ? t(this._hass, 'Unavailable') : (this._hass.formatEntityState?.(s) ?? t(this._hass, on ? 'On' : 'Off'));
     this._els.pct.textContent = on ? `${pct} %` : '';
 
     const st = this._card.style;
@@ -1199,7 +1424,7 @@ if (!customElements.get('m3-light-slider-card')) {
   window.customCards.push({
     type: 'm3-light-slider-card',
     name: 'M3 Light Slider',
-    description: 'Slider de luminosité Material 3 teinté avec la couleur de la lumière',
+    description: t(null, 'Material 3 brightness slider tinted with the light color'),
     preview: true,
   });
 }
@@ -1264,7 +1489,7 @@ class M3ListCardEditor extends M3CardEditor {
         {
           name: 'radius', selector: {
             select: { mode: 'dropdown', options: [
-              { value: 'small', label: 'Petits' }, { value: 'medium', label: 'Moyens' }, { value: 'large', label: 'Grands' },
+              { value: 'small', label: 'Small' }, { value: 'medium', label: 'Medium' }, { value: 'large', label: 'Large' },
             ] },
           },
         },
@@ -1276,33 +1501,33 @@ class M3ListCardEditor extends M3CardEditor {
         object: {
           multiple: true, label_field: 'name', description_field: 'entity',
           fields: {
-            entity: { label: 'Entité', selector: { entity: {} } },
-            name: { label: 'Nom', selector: { text: {} } },
-            label: { label: 'Sous-titre (vide : état de l’entité)', selector: { text: {} } },
-            label_on: { label: 'Sous-titre quand c’est actif', selector: { text: {} } },
-            label_off: { label: 'Sous-titre quand c’est inactif', selector: { text: {} } },
-            alert_below: { label: 'Alerte sous (valeur)', selector: { number: { mode: 'box', step: 'any' } } },
-            icon: { label: 'Icône', selector: { icon: {} } },
+            entity: { label: 'Entity', selector: { entity: {} } },
+            name: { label: 'Name', selector: { text: {} } },
+            label: { label: 'Subtitle (empty: entity state)', selector: { text: {} } },
+            label_on: { label: 'Subtitle when active', selector: { text: {} } },
+            label_off: { label: 'Subtitle when inactive', selector: { text: {} } },
+            alert_below: { label: 'Alert below (value)', selector: { number: { mode: 'box', step: 'any' } } },
+            icon: { label: 'Icon', selector: { icon: {} } },
             trailing: {
-              label: 'À droite', selector: {
+              label: 'On the right', selector: {
                 select: { mode: 'dropdown', options: [
-                  { value: 'auto', label: 'Automatique' }, { value: 'switch', label: 'Interrupteur' },
-                  { value: 'state', label: 'État' }, { value: 'chevron', label: 'Flèche' }, { value: 'none', label: 'Rien' },
+                  { value: 'auto', label: 'Automatic' }, { value: 'switch', label: 'Switch' },
+                  { value: 'state', label: 'State' }, { value: 'chevron', label: 'Chevron' }, { value: 'none', label: 'Nothing' },
                 ] },
               },
             },
-            tap_action: { label: 'Appui', selector: { ui_action: {} } },
-            hold_action: { label: 'Appui long', selector: { ui_action: {} } },
+            tap_action: { label: 'Tap', selector: { ui_action: {} } },
+            hold_action: { label: 'Long press', selector: { ui_action: {} } },
           },
         },
       },
     },
   ];
 
-  static labels = { title: 'Titre', radius: 'Coins', dynamic: 'Teinter les lignes actives', rows: 'Lignes' };
+  static labels = { title: 'Title', radius: 'Corners', dynamic: 'Tint active rows', rows: 'Rows' };
 
   static helpers = {
-    rows: 'À droite, « Automatique » : interrupteur pour ce qui s’allume, flèche pour une navigation',
+    rows: 'On the right, "Automatic": a switch for things that turn on, a chevron for navigation',
   };
 }
 
@@ -1316,19 +1541,19 @@ class M3ListCard extends HTMLElement {
     const entities = Object.keys(hass.states);
     const pick = (domain) => entities.find((e) => e.startsWith(`${domain}.`));
     return {
-      title: 'Réglages',
+      title: t(hass, 'Settings'),
       rows: [pick('light'), pick('switch'), pick('scene')].filter(Boolean).map((entity) => ({ entity })),
     };
   }
 
   setConfig(config) {
     if (!config || !Array.isArray(config.rows) || !config.rows.length) {
-      throw new Error('m3-list-card : « rows » doit contenir au moins une ligne');
+      throw new Error('m3-list-card: "rows" must contain at least one row');
     }
     for (const row of config.rows) {
-      if (!row.entity && !row.name) throw new Error('m3-list-card : chaque ligne a besoin d’une « entity » ou d’un « name »');
+      if (!row.entity && !row.name) throw new Error('m3-list-card: every row needs an "entity" or a "name"');
       if (row.trailing && !TRAILING.includes(row.trailing)) {
-        throw new Error(`m3-list-card : « trailing » doit valoir ${TRAILING.join(', ')}`);
+        throw new Error(`m3-list-card: "trailing" must be one of ${TRAILING.join(', ')}`);
       }
     }
     this._config = { dynamic: true, radius: 'large', ...config };
@@ -1453,11 +1678,11 @@ class M3ListCard extends HTMLElement {
 
   _stateText(s, offline) {
     if (!s) return null;
-    if (offline) return 'Hors ligne';
+    if (offline) return t(this._hass, 'Offline');
     const [domain] = s.entity_id.split('.');
     // L'état d'une scène ou d'un bouton est la date du dernier déclenchement : rien à afficher.
     if (['scene', 'button', 'input_button'].includes(domain)) return null;
-    if (domain === 'script') return s.state === 'on' ? 'En cours' : null;
+    if (domain === 'script') return s.state === 'on' ? t(this._hass, 'Running') : null;
     const state = this._hass.formatEntityState?.(s) ?? s.state;
     if (domain === 'light' && s.state === 'on' && s.attributes.brightness != null) {
       return `${state} • ${Math.round((s.attributes.brightness / 255) * 100)} %`;
@@ -1524,7 +1749,7 @@ if (!customElements.get('m3-list-card')) {
   window.customCards.push({
     type: 'm3-list-card',
     name: 'M3 List',
-    description: 'Liste Material 3 Expressive : lignes empilées avec interrupteur, état ou flèche à droite',
+    description: t(null, 'Material 3 Expressive list: stacked rows with a switch, state or chevron on the right'),
     preview: true,
   });
 }
@@ -1587,12 +1812,12 @@ class M3MapCardEditor extends M3CardEditor {
   ];
 
   static labels = {
-    entity: 'Caméra de la carte', mower: 'Robot', battery: 'Batterie', lawn_color: 'Couleur de la pelouse', height: 'Hauteur max.',
+    entity: 'Map camera', mower: 'Robot', battery: 'Battery', lawn_color: 'Lawn color', height: 'Max height',
   };
 
   static helpers = {
-    mower: 'Facultatif : son état s’affiche dans une pastille sur la carte',
-    lawn_color: 'Couleur CSS, vide : vert',
+    mower: 'Optional: its state is shown in a chip on the map',
+    lawn_color: 'CSS color, empty: green',
   };
 }
 
@@ -1607,7 +1832,7 @@ class M3MapCard extends HTMLElement {
   }
 
   setConfig(config) {
-    if (!config || !config.entity) throw new Error('m3-map-card : « entity » (caméra) est obligatoire');
+    if (!config || !config.entity) throw new Error('m3-map-card: "entity" (camera) is required');
     this._config = config;
     if (!this.shadowRoot) this._build();
     const st = this._card.style;
@@ -1631,7 +1856,7 @@ class M3MapCard extends HTMLElement {
   _build() {
     const root = this.attachShadow({ mode: 'open' });
     root.innerHTML = `<style>${STYLE}</style>
-      <ha-card><div class="map"><div class="empty">Chargement de la carte…</div></div><div class="chip"></div></ha-card>`;
+      <ha-card><div class="map"><div class="empty">${t(this._hass, 'Loading the map…')}</div></div><div class="chip"></div></ha-card>`;
     this._card = root.querySelector('ha-card');
     this._map = root.querySelector('.map');
     this._chip = root.querySelector('.chip');
@@ -1646,7 +1871,7 @@ class M3MapCard extends HTMLElement {
     const cam = this._hass.states[this._config.entity];
     const picture = cam?.attributes.entity_picture;
     if (!picture) {
-      this._map.innerHTML = '<div class="empty">Carte indisponible</div>';
+      this._map.innerHTML = `<div class="empty">${t(this._hass, 'Map unavailable')}</div>`;
       this._url = null;
       return;
     }
@@ -1681,7 +1906,7 @@ class M3MapCard extends HTMLElement {
       }
     } catch (err) {
       console.warn('m3-map-card : carte indisponible', err);
-      this._map.innerHTML = '<div class="empty">Carte indisponible</div>';
+      this._map.innerHTML = `<div class="empty">${t(this._hass, 'Map unavailable')}</div>`;
     }
   }
 
@@ -1777,7 +2002,7 @@ if (!customElements.get('m3-map-card')) {
   window.customCards.push({
     type: 'm3-map-card',
     name: 'M3 Map',
-    description: 'Carte d’un robot (tondeuse Dreame...) redessinée aux couleurs Material 3, avec son état',
+    description: t(null, 'Robot map (Dreame mower...) redrawn in Material 3 colors, with its state'),
     preview: true,
   });
 }
@@ -1899,8 +2124,8 @@ class M3MediaCardEditor extends M3CardEditor {
   ];
 
   static labels = {
-    entity: 'Lecteur', name: 'Nom', icon: 'Icône', show_progress: 'Progression', show_volume: 'Volume',
-    show_source: 'Application / source', artwork_colors: 'Couleurs de la pochette',
+    entity: 'Player', name: 'Name', icon: 'Icon', show_progress: 'Progress', show_volume: 'Volume',
+    show_source: 'App / source', artwork_colors: 'Artwork colors',
   };
 }
 
@@ -1916,7 +2141,7 @@ class M3MediaCard extends HTMLElement {
   }
 
   setConfig(config) {
-    if (!config || !config.entity) throw new Error('m3-media-card : « entity » est obligatoire');
+    if (!config || !config.entity) throw new Error('m3-media-card: "entity" is required');
     this._config = { show_progress: true, show_volume: true, show_source: true, artwork_colors: true, ...config };
     if (!this.shadowRoot) this._build();
     this._artColor = undefined;
@@ -1953,21 +2178,21 @@ class M3MediaCard extends HTMLElement {
             <div class="title"></div><div class="artist"></div>
             <div class="source"><ha-icon></ha-icon><span></span></div>
           </div>
-          <button class="power" title="Marche / arrêt"><ha-icon icon="mdi:power"></ha-icon></button>
+          <button class="power" title="${t(this._hass, 'Turn on / off')}"><ha-icon icon="mdi:power"></ha-icon></button>
         </div>
         <div class="progress">
           <div class="bar"><div class="fill"></div></div>
           <div class="times"><span class="pos"></span><span class="dur"></span></div>
         </div>
         <div class="controls">
-          <button class="small shuffle" title="Aléatoire"><ha-icon icon="mdi:shuffle-variant"></ha-icon></button>
-          <button class="prev" title="Précédent"><ha-icon icon="mdi:skip-previous"></ha-icon></button>
-          <button class="play" title="Lecture / pause"><ha-icon></ha-icon></button>
-          <button class="next" title="Suivant"><ha-icon icon="mdi:skip-next"></ha-icon></button>
-          <button class="small repeat" title="Répéter"><ha-icon></ha-icon></button>
+          <button class="small shuffle" title="${t(this._hass, 'Shuffle')}"><ha-icon icon="mdi:shuffle-variant"></ha-icon></button>
+          <button class="prev" title="${t(this._hass, 'Previous')}"><ha-icon icon="mdi:skip-previous"></ha-icon></button>
+          <button class="play" title="${t(this._hass, 'Play / pause')}"><ha-icon></ha-icon></button>
+          <button class="next" title="${t(this._hass, 'Next')}"><ha-icon icon="mdi:skip-next"></ha-icon></button>
+          <button class="small repeat" title="${t(this._hass, 'Repeat')}"><ha-icon></ha-icon></button>
         </div>
         <div class="volume">
-          <button class="mute" title="Muet"><ha-icon></ha-icon></button>
+          <button class="mute" title="${t(this._hass, 'Mute')}"><ha-icon></ha-icon></button>
           <div class="vbar"><div class="vfill"></div></div>
           <span class="vpct"></span>
         </div>
@@ -2030,7 +2255,7 @@ class M3MediaCard extends HTMLElement {
     this.toggleAttribute('seekable', this._supports(F.SEEK));
 
     const name = c.name ?? a.friendly_name ?? c.entity;
-    const stateText = unavailable ? 'Indisponible' : (this._hass.formatEntityState?.(s) ?? s.state);
+    const stateText = unavailable ? t(this._hass, 'Unavailable') : (this._hass.formatEntityState?.(s) ?? s.state);
     if (hasMedia) {
       e.title.textContent = a.media_title ?? name;
       e.artist.textContent = [a.media_artist ?? a.media_series_title, a.media_album_name].filter(Boolean).join(' • ') || name;
@@ -2229,7 +2454,7 @@ if (!customElements.get('m3-media-card')) {
   window.customCards.push({
     type: 'm3-media-card',
     name: 'M3 Media',
-    description: 'Lecteur multimédia Material 3 : pochette, progression, commandes, volume et couleurs de la pochette',
+    description: t(null, 'Material 3 media player: artwork, progress, controls, volume and artwork colors'),
     preview: true,
   });
 }
@@ -2282,10 +2507,10 @@ class M3MultiGraphCardEditor extends M3CardEditor {
         object: {
           multiple: true, label_field: 'name', description_field: 'entity',
           fields: {
-            entity: { label: 'Capteur', required: true, selector: { entity: { domain: ['sensor', 'input_number', 'number'] } } },
-            name: { label: 'Nom', selector: { text: {} } },
-            icon: { label: 'Icône', selector: { icon: {} } },
-            color: { label: 'Couleur (CSS ou couleur HA)', selector: { text: {} } },
+            entity: { label: 'Sensor', required: true, selector: { entity: { domain: ['sensor', 'input_number', 'number'] } } },
+            name: { label: 'Name', selector: { text: {} } },
+            icon: { label: 'Icon', selector: { icon: {} } },
+            color: { label: 'Color (CSS or HA color)', selector: { text: {} } },
           },
         },
       },
@@ -2295,8 +2520,8 @@ class M3MultiGraphCardEditor extends M3CardEditor {
         select: {
           mode: 'box', options: [
             { value: 'simple', label: 'Simple' },
-            { value: 'delta', label: 'Avec l’écart' },
-            { value: 'extrema', label: 'Avec min / max' },
+            { value: 'delta', label: 'With the difference' },
+            { value: 'extrema', label: 'With min / max' },
           ],
         },
       },
@@ -2309,9 +2534,9 @@ class M3MultiGraphCardEditor extends M3CardEditor {
     },
   ];
 
-  static labels = { entities: 'Capteurs', variant: 'Style', hours_to_show: 'Période', graph_height: 'Hauteur des courbes' };
+  static labels = { entities: 'Sensors', variant: 'Style', hours_to_show: 'Period', graph_height: 'Curves height' };
 
-  static helpers = { variant: 'L’écart compare les deux premiers capteurs' };
+  static helpers = { variant: 'The difference compares the first two sensors' };
 }
 
 class M3MultiGraphCard extends HTMLElement {
@@ -2328,14 +2553,14 @@ class M3MultiGraphCard extends HTMLElement {
 
   setConfig(config) {
     if (!config || !Array.isArray(config.entities) || !config.entities.length) {
-      throw new Error('m3-multi-graph-card : « entities » doit contenir au moins un capteur');
+      throw new Error('m3-multi-graph-card: "entities" must contain at least one sensor');
     }
     if (config.variant && !VARIANTS.includes(config.variant)) {
-      throw new Error(`m3-multi-graph-card : « variant » doit valoir ${VARIANTS.join(', ')}`);
+      throw new Error(`m3-multi-graph-card: "variant" must be one of ${VARIANTS.join(', ')}`);
     }
     // Les capteurs s'écrivent en liste d'objets ou simplement d'identifiants.
     const entities = config.entities.map((e) => (typeof e === 'string' ? { entity: e } : e));
-    if (entities.some((e) => !e.entity)) throw new Error('m3-multi-graph-card : chaque capteur a besoin d’une « entity »');
+    if (entities.some((e) => !e.entity)) throw new Error('m3-multi-graph-card: every sensor needs an "entity"');
     const previous = this._config;
     this._config = { variant: 'simple', hours_to_show: 24, graph_height: 55, ...config, entities };
     this.setAttribute('variant', this._config.variant);
@@ -2537,7 +2762,7 @@ if (!customElements.get('m3-multi-graph-card')) {
   window.customCards.push({
     type: 'm3-multi-graph-card',
     name: 'M3 Multi Graph',
-    description: 'Plusieurs capteurs sur un même graphique (ex. température dedans / dehors), écart ou min / max en option',
+    description: t(null, 'Several sensors on one graph (e.g. indoor / outdoor temperature), with an optional difference or min / max'),
     preview: true,
   });
 }
@@ -2583,7 +2808,12 @@ ha-card {
 `;
 
 // Bonjour le jour, bonsoir à partir de 18 h.
-const greetingWord = (date = new Date()) => (date.getHours() >= 18 || date.getHours() < 4 ? 'Bonsoir' : 'Bonjour');
+// Matin, après-midi ou soir selon l'heure.
+const greetingKey = (date = new Date()) => {
+  const h = date.getHours();
+  if (h >= 18 || h < 4) return 'Good evening, {name}!';
+  return h < 12 ? 'Good morning, {name}!' : 'Good afternoon, {name}!';
+};
 
 class M3PersonCardEditor extends M3CardEditor {
   static schema = [
@@ -2599,13 +2829,13 @@ class M3PersonCardEditor extends M3CardEditor {
   ];
 
   static labels = {
-    persons: 'Autres personnes', greeting: 'Message', show_state: 'Afficher l’état',
-    show_dot: 'Pastille « à la maison »', background: 'Fond de carte',
+    persons: 'Other people', greeting: 'Message', show_state: 'Show the state',
+    show_dot: '"At home" dot', background: 'Card background',
   };
 
   static helpers = {
-    persons: 'Vide : toutes les personnes sauf vous',
-    greeting: 'Vide : « Bonjour » ou « Bonsoir » suivi du prénom',
+    persons: 'Empty: everyone except you',
+    greeting: 'Empty: "Good morning" or "Good evening" followed by the first name',
   };
 }
 
@@ -2675,13 +2905,13 @@ class M3PersonCard extends HTMLElement {
       .filter((e) => e !== this._me && states[e]);
 
     // Ne redessine que si une personne ou l'heure du message a changé.
-    const key = [this._me, ...others].map((e) => e && states[e]?.last_updated).join() + greetingWord() + (this._hass.user?.name ?? '');
+    const key = [this._me, ...others].map((e) => e && states[e]?.last_updated).join() + greetingKey() + (this._hass.user?.name ?? '');
     if (key === this._key) return;
     this._key = key;
 
     const me = this._me && states[this._me];
     const firstName = (this._hass.user?.name ?? me?.attributes.friendly_name ?? '').split(' ')[0];
-    this._els.greeting.textContent = c.greeting ?? `${greetingWord()} ${firstName} !`;
+    this._els.greeting.textContent = c.greeting ?? t(this._hass, greetingKey(), { name: firstName });
     this._els.state.textContent = me ? this._stateText(me) : '';
     this._fillAvatar(this._els.me, me, firstName);
 
@@ -2703,8 +2933,8 @@ class M3PersonCard extends HTMLElement {
   }
 
   _stateText(s) {
-    if (s.state === 'home') return 'À la maison';
-    if (s.state === 'not_home') return 'Hors de la maison';
+    if (s.state === 'home') return t(this._hass, 'At home');
+    if (s.state === 'not_home') return t(this._hass, 'Away');
     return this._hass.formatEntityState?.(s) ?? s.state;
   }
 
@@ -2740,7 +2970,7 @@ if (!customElements.get('m3-person-card')) {
   window.customCards.push({
     type: 'm3-person-card',
     name: 'M3 Person',
-    description: 'Accueil Material 3 : « Bonjour » avec votre avatar, et les autres personnes de la maison',
+    description: t(null, 'Material 3 greeting: "Good morning" with your avatar, and the other people in the house'),
     preview: true,
   });
 }
@@ -2842,7 +3072,7 @@ class M3PopupCardEditor extends M3CardEditor {
   static schema = [
     { name: 'hash', required: true, selector: { text: {} } },
     {
-      type: 'expandable', name: 'header', title: 'En-tête', icon: 'mdi:page-layout-header', schema: [
+      type: 'expandable', name: 'header', title: 'Header', icon: 'mdi:page-layout-header', schema: [
         {
           type: 'grid', name: '', schema: [
             { name: 'name', selector: { text: {} } },
@@ -2854,9 +3084,9 @@ class M3PopupCardEditor extends M3CardEditor {
                 select: {
                   mode: 'dropdown',
                   options: [
-                    { value: 'name', label: 'Nom seulement' },
-                    { value: 'state', label: 'Nom et état' },
-                    { value: 'switch', label: 'Nom, état et interrupteur' },
+                    { value: 'name', label: 'Name only' },
+                    { value: 'state', label: 'Name and state' },
+                    { value: 'switch', label: 'Name, state and switch' },
                   ],
                 },
               },
@@ -2867,7 +3097,7 @@ class M3PopupCardEditor extends M3CardEditor {
       ],
     },
     {
-      type: 'expandable', name: 'settings', title: 'Comportement', icon: 'mdi:gesture-swipe-down', schema: [
+      type: 'expandable', name: 'settings', title: 'Behavior', icon: 'mdi:gesture-swipe-down', schema: [
         { name: 'close_by_clicking_outside', selector: { boolean: {} } },
         {
           type: 'grid', name: '', schema: [
@@ -2878,7 +3108,7 @@ class M3PopupCardEditor extends M3CardEditor {
       ],
     },
     {
-      type: 'expandable', name: 'style', title: 'Apparence', icon: 'mdi:palette-outline', schema: [
+      type: 'expandable', name: 'style', title: 'Appearance', icon: 'mdi:palette-outline', schema: [
         {
           type: 'grid', name: '', schema: [
             { name: 'width_desktop', selector: { number: { min: 280, max: 1200, step: 10, mode: 'box', unit_of_measurement: 'px' } } },
@@ -2892,16 +3122,16 @@ class M3PopupCardEditor extends M3CardEditor {
   ];
 
   static labels = {
-    hash: 'Hash d’ouverture', name: 'Titre', icon: 'Icône', entity: 'Entité', button_type: 'En-tête',
-    show_header: 'Afficher l’en-tête', close_by_clicking_outside: 'Fermer en appuyant à côté',
-    auto_close: 'Fermeture automatique', slide_to_close_distance: 'Distance de glissement',
-    width_desktop: 'Largeur (ordinateur)', width_mobile: 'Largeur (mobile)',
-    border_radius: 'Arrondi', backdrop_blur: 'Flou du fond',
+    hash: 'Opening hash', name: 'Title', icon: 'Icon', entity: 'Entity', button_type: 'Header',
+    show_header: 'Show the header', close_by_clicking_outside: 'Close when tapping outside',
+    auto_close: 'Auto close', slide_to_close_distance: 'Swipe distance',
+    width_desktop: 'Width (desktop)', width_mobile: 'Width (mobile)',
+    border_radius: 'Corner radius', backdrop_blur: 'Backdrop blur',
   };
 
   static helpers = {
-    hash: 'Ex. #salon : ouvrir avec une action « Naviguer » vers #salon. Les cartes de la popup se modifient en YAML (cards:)',
-    auto_close: '0 ou vide : pas de fermeture automatique',
+    hash: 'E.g. #living-room: open it with a "Navigate" action to #living-room. The popup\'s cards are edited in YAML (cards:)',
+    auto_close: '0 or empty: never closes automatically',
   };
 }
 
@@ -2917,7 +3147,7 @@ class M3PopupCard extends HTMLElement {
 
   setConfig(config) {
     if (!config || !config.hash || !String(config.hash).startsWith('#')) {
-      throw new Error('m3-popup-card : « hash » est obligatoire et doit commencer par # (ex. #salon)');
+      throw new Error('m3-popup-card: "hash" is required and must start with # (e.g. #living-room)');
     }
     this._config = config;
     this._header = { show_header: true, name: 'Popup', button_type: 'name', ...config.header };
@@ -2965,7 +3195,7 @@ class M3PopupCard extends HTMLElement {
       <ha-card>
         <ha-icon></ha-icon>
         <div class="text"><div class="name"></div><div class="info"></div></div>
-        <button>Ouvrir</button>
+        <button>${t(this._hass, 'Open')}</button>
       </ha-card>`;
     root.querySelector('button').addEventListener('click', () => this._open());
   }
@@ -2975,7 +3205,7 @@ class M3PopupCard extends HTMLElement {
     const count = (this._config.cards ?? []).length;
     root.querySelector('ha-icon').icon = this._header.icon ?? 'mdi:dock-window';
     root.querySelector('.name').textContent = `Popup ${this._header.name}`;
-    root.querySelector('.info').textContent = `${this._config.hash} • ${count} carte${count > 1 ? 's' : ''}`;
+    root.querySelector('.info').textContent = `${this._config.hash} • ${t(this._hass, count > 1 ? '{count} cards' : '{count} card', { count })}`;
   }
 
   _checkHash() {
@@ -3010,8 +3240,8 @@ class M3PopupCard extends HTMLElement {
         <div class="header">
           <ha-icon class="icon"></ha-icon>
           <div class="title"><div class="name"></div><div class="state"></div></div>
-          <button class="switch" role="switch" aria-label="Allumer / éteindre"></button>
-          <button class="icon-button close" aria-label="Fermer"><ha-icon icon="mdi:close"></ha-icon></button>
+          <button class="switch" role="switch" aria-label="${t(this._hass, 'Turn on / off')}"></button>
+          <button class="icon-button close" aria-label="${t(this._hass, 'Close')}"><ha-icon icon="mdi:close"></ha-icon></button>
         </div>
         <div class="body"></div>
       </div>`;
@@ -3147,7 +3377,7 @@ if (!customElements.get('m3-popup-card')) {
   window.customCards.push({
     type: 'm3-popup-card',
     name: 'M3 Popup',
-    description: 'Popup Material 3 ouverte par un #hash, contenant n’importe quelles cartes',
+    description: t(null, 'Material 3 popup opened by a #hash, holding any cards'),
   });
 }
 }
@@ -3208,13 +3438,13 @@ class M3ProgressCardEditor extends M3CardEditor {
   ];
 
   static labels = {
-    entity: 'État de la tâche', name: 'Nom', icon: 'Icône', progress: 'Progression (%)', end_time: 'Heure de fin',
-    remaining: 'Temps restant', image: 'Image', color: 'Couleur',
+    entity: 'Task state', name: 'Name', icon: 'Icon', progress: 'Progress (%)', end_time: 'End time',
+    remaining: 'Time left', image: 'Image', color: 'Color',
   };
 
   static helpers = {
-    end_time: 'Capteur horodatage : le temps restant en est déduit',
-    remaining: 'Sinon : capteur de durée (min, h ou s)',
+    end_time: 'Timestamp sensor: the time left is derived from it',
+    remaining: 'Otherwise: duration sensor (min, h or s)',
   };
 }
 
@@ -3230,7 +3460,7 @@ class M3ProgressCard extends HTMLElement {
   }
 
   setConfig(config) {
-    if (!config || !config.entity) throw new Error('m3-progress-card : « entity » est obligatoire');
+    if (!config || !config.entity) throw new Error('m3-progress-card: "entity" is required');
     this._config = config;
     if (!this.shadowRoot) this._build();
     this._key = null;
@@ -3300,7 +3530,7 @@ class M3ProgressCard extends HTMLElement {
 
     const e = this._els;
     e.name.textContent = c.name ?? s?.attributes.friendly_name ?? c.entity;
-    e.state.textContent = !s ? 'Introuvable' : (this._hass.formatEntityState?.(s) ?? s.state);
+    e.state.textContent = !s ? t(this._hass, 'Not found') : (this._hass.formatEntityState?.(s) ?? s.state);
     Object.assign(e.icon, { hass: this._hass, stateObj: s, icon: c.icon });
 
     const picture = image?.attributes.entity_picture;
@@ -3320,11 +3550,12 @@ class M3ProgressCard extends HTMLElement {
     const left = remaining && remaining.minutes > 0 ? formatDuration(remaining.minutes) : null;
     this.toggleAttribute('no-times', !left);
     if (left) {
-      e.left.textContent = `Reste ${left}`;
+      e.left.textContent = t(this._hass, '{time} left', { time: left });
       const lang = this._hass.locale?.language ?? 'fr';
       const sameDay = remaining.end.toDateString() === new Date().toDateString();
       const time = remaining.end.toLocaleTimeString(lang, { hour: '2-digit', minute: '2-digit' });
-      e.end.textContent = sameDay ? `Fin à ${time}` : `Fin ${remaining.end.toLocaleDateString(lang, { weekday: 'short' })} à ${time}`;
+      const day = remaining.end.toLocaleDateString(lang, { weekday: 'short' });
+      e.end.textContent = sameDay ? t(this._hass, 'Ends at {time}', { time }) : t(this._hass, 'Ends {day} at {time}', { day, time });
     }
 
     this._card.style.setProperty('--m3-accent', c.color ? cssColor(c.color) : 'var(--md-sys-color-primary, var(--primary-color))');
@@ -3343,7 +3574,7 @@ if (!customElements.get('m3-progress-card')) {
   window.customCards.push({
     type: 'm3-progress-card',
     name: 'M3 Progress',
-    description: 'Tâche en cours (impression 3D, lave-linge...) : pourcentage, barre de progression, temps restant et heure de fin',
+    description: t(null, 'Task in progress (3D print, washing machine...): percentage, progress bar, time left and end time'),
     preview: true,
   });
 }
@@ -3411,15 +3642,15 @@ class M3RoomCardEditor extends M3CardEditor {
   ];
 
   static labels = {
-    name: 'Nom', icon: 'Icône', light: 'Lumière', climate: 'Thermostat',
-    temperature: 'Température', humidity: 'Humidité', tap_action: 'Appui', hold_action: 'Appui long',
+    name: 'Name', icon: 'Icon', light: 'Light', climate: 'Thermostat',
+    temperature: 'Temperature', humidity: 'Humidity', tap_action: 'Tap', hold_action: 'Long press',
   };
 
   static helpers = {
-    light: 'Le fond prend sa couleur quand elle est allumée',
-    climate: 'L’icône devient une flamme quand le chauffage est en marche ; sa température sert si aucun capteur n’est choisi',
-    tap_action: 'Par exemple « Naviguer » vers #salon pour ouvrir une popup. Vide : fenêtre de détails',
-    hold_action: 'Vide : allumer / éteindre la lumière',
+    light: 'The background takes its color when it is on',
+    climate: 'The icon becomes a flame while the heating is on; its temperature is used when no sensor is set',
+    tap_action: 'For example "Navigate" to #living-room to open a popup. Empty: more-info dialog',
+    hold_action: 'Empty: turn the light on / off',
   };
 }
 
@@ -3432,13 +3663,13 @@ class M3RoomCard extends HTMLElement {
   static getStubConfig(hass) {
     const entities = Object.keys(hass.states);
     const byClass = (dc) => entities.find((e) => e.startsWith('sensor.') && hass.states[e].attributes.device_class === dc);
-    const config = { name: 'Salon', light: entities.find((e) => e.startsWith('light.')), temperature: byClass('temperature'), humidity: byClass('humidity') };
+    const config = { name: t(hass, 'Living room'), light: entities.find((e) => e.startsWith('light.')), temperature: byClass('temperature'), humidity: byClass('humidity') };
     for (const key of Object.keys(config)) if (!config[key]) delete config[key];
     return config;
   }
 
   setConfig(config) {
-    if (!config || !config.name) throw new Error('m3-room-card : « name » est obligatoire');
+    if (!config || !config.name) throw new Error('m3-room-card: "name" is required');
     this._config = config;
     if (!this.shadowRoot) this._build();
     if (this._hass) this._render();
@@ -3570,7 +3801,7 @@ if (!customElements.get('m3-room-card')) {
   window.customCards.push({
     type: 'm3-room-card',
     name: 'M3 Room',
-    description: 'Pièce Material 3 : température, humidité, couleur de la lumière et chauffage en cours',
+    description: t(null, 'Material 3 room: temperature, humidity, light color and heating'),
     preview: true,
   });
 }
@@ -3639,9 +3870,9 @@ class M3SceneCardEditor extends M3CardEditor {
       name: 'variant', selector: {
         select: {
           mode: 'box', options: [
-            { value: 'group', label: 'Groupe de boutons' },
-            { value: 'tiles', label: 'Tuiles' },
-            { value: 'carousel', label: 'Carrousel' },
+            { value: 'group', label: 'Button group' },
+            { value: 'tiles', label: 'Tiles' },
+            { value: 'carousel', label: 'Carousel' },
           ],
         },
       },
@@ -3651,10 +3882,10 @@ class M3SceneCardEditor extends M3CardEditor {
         object: {
           multiple: true, label_field: 'name', description_field: 'entity',
           fields: {
-            entity: { label: 'Scène', required: true, selector: { entity: { domain: ['scene', 'script'] } } },
-            name: { label: 'Nom', selector: { text: {} } },
-            icon: { label: 'Icône', selector: { icon: {} } },
-            color: { label: 'Couleur', selector: { ui_color: {} } },
+            entity: { label: 'Scene', required: true, selector: { entity: { domain: ['scene', 'script'] } } },
+            name: { label: 'Name', selector: { text: {} } },
+            icon: { label: 'Icon', selector: { icon: {} } },
+            color: { label: 'Color', selector: { ui_color: {} } },
           },
         },
       },
@@ -3662,10 +3893,10 @@ class M3SceneCardEditor extends M3CardEditor {
     { name: 'off', selector: { entity: { domain: ['light', 'switch', 'group'] } } },
   ];
 
-  static labels = { variant: 'Style', scenes: 'Scènes', off: 'Bouton « Éteindre »' };
+  static labels = { variant: 'Style', scenes: 'Scenes', off: '"Turn off" button' };
 
   static helpers = {
-    off: 'Facultatif : ajoute un bouton qui éteint cette entité ; éteinte, aucune scène n’est active',
+    off: 'Optional: adds a button that turns this entity off; when it is off, no scene is active',
   };
 }
 
@@ -3682,12 +3913,12 @@ class M3SceneCard extends HTMLElement {
 
   setConfig(config) {
     if (!config || !Array.isArray(config.scenes) || !config.scenes.length) {
-      throw new Error('m3-scene-card : « scenes » doit contenir au moins une scène');
+      throw new Error('m3-scene-card: "scenes" must contain at least one scene');
     }
     if (config.variant && !VARIANTS.includes(config.variant)) {
-      throw new Error(`m3-scene-card : « variant » doit valoir ${VARIANTS.join(', ')}`);
+      throw new Error(`m3-scene-card: "variant" must be one of ${VARIANTS.join(', ')}`);
     }
-    if (config.scenes.some((s) => !s.entity)) throw new Error('m3-scene-card : chaque scène a besoin d’une « entity »');
+    if (config.scenes.some((s) => !s.entity)) throw new Error('m3-scene-card: every scene needs an "entity"');
     this._config = { variant: 'group', ...config };
     // `off` accepte une entité ou un objet { entity, name, icon, color }.
     this._off = typeof config.off === 'string' ? { entity: config.off } : config.off ?? null;
@@ -3714,7 +3945,7 @@ class M3SceneCard extends HTMLElement {
     root.innerHTML = `<style>${STYLE}</style><ha-card><div class="items"></div></ha-card>`;
     const list = root.querySelector('.items');
     const items = this._config.scenes.map((scene, i) => ({ ...scene, color: scene.color ?? DEFAULT_COLORS[i % DEFAULT_COLORS.length] }));
-    if (this._off) items.push({ icon: 'mdi:power', name: 'Éteindre', color: 'disabled', ...this._off, isOff: true });
+    if (this._off) items.push({ icon: 'mdi:power', name: t(this._hass, 'Turn off'), color: 'disabled', ...this._off, isOff: true });
     this._items = items.map((item) => {
       const el = document.createElement('div');
       el.className = 'item';
@@ -3814,7 +4045,7 @@ if (!customElements.get('m3-scene-card')) {
   window.customCards.push({
     type: 'm3-scene-card',
     name: 'M3 Scenes',
-    description: 'Sélecteur de scènes Material 3 : groupe de boutons, tuiles ou carrousel, scène active mise en avant',
+    description: t(null, 'Material 3 scene selector: button group, tiles or carousel, with the active scene highlighted'),
     preview: true,
   });
 }
@@ -3878,16 +4109,16 @@ const SEND_DELAY = 600;
 const PENDING_TTL = 8000;
 
 const MODES = {
-  heat: { label: 'Chauffage', icon: 'mdi:fire' },
-  cool: { label: 'Climatisation', icon: 'mdi:snowflake' },
-  heat_cool: { label: 'Chaud / froid', icon: 'mdi:sun-snowflake-variant' },
-  auto: { label: 'Auto', icon: 'mdi:thermostat-auto' },
-  dry: { label: 'Déshumidification', icon: 'mdi:water-percent' },
-  fan_only: { label: 'Ventilation', icon: 'mdi:fan' },
-  off: { label: 'Arrêt', icon: 'mdi:power' },
+  heat: { icon: 'mdi:fire' },
+  cool: { icon: 'mdi:snowflake' },
+  heat_cool: { icon: 'mdi:sun-snowflake-variant' },
+  auto: { icon: 'mdi:thermostat-auto' },
+  dry: { icon: 'mdi:water-percent' },
+  fan_only: { icon: 'mdi:fan' },
+  off: { icon: 'mdi:power' },
 };
 
-const fmt = (n) => Number(n).toLocaleString('fr-FR', { maximumFractionDigits: 1 });
+const fmt = (n) => Number(n).toLocaleString(langOf(), { maximumFractionDigits: 1 });
 
 class M3ThermostatCardEditor extends M3CardEditor {
   static schema = [
@@ -3913,13 +4144,13 @@ class M3ThermostatCardEditor extends M3CardEditor {
   ];
 
   static labels = {
-    entity: 'Entité', name: 'Nom', icon: 'Icône',
-    step: 'Pas des boutons − / +', hvac_mode: 'Mode au démarrage',
+    entity: 'Entity', name: 'Name', icon: 'Icon',
+    step: 'Step of the − / + buttons', hvac_mode: 'Mode when turned on',
   };
 
   static helpers = {
-    icon: 'Laisser vide pour que l’icône suive le mode',
-    hvac_mode: 'Mode activé par le bouton Marche (par défaut : chauffage)',
+    icon: 'Leave empty so the icon follows the mode',
+    hvac_mode: 'Mode set by the on button (default: heat)',
   };
 }
 
@@ -3932,7 +4163,7 @@ class M3ThermostatCard extends HTMLElement {
 
   setConfig(config) {
     if (!config || !config.entity || !config.entity.startsWith('climate.')) {
-      throw new Error('m3-thermostat-card : « entity » doit être une entité climate.*');
+      throw new Error('m3-thermostat-card: "entity" must be a climate.* entity');
     }
     this._config = { step: 0.5, ...config };
     if (!this.shadowRoot) this._build();
@@ -3962,12 +4193,12 @@ class M3ThermostatCard extends HTMLElement {
         <div class="header">
           <ha-icon class="mode-icon"></ha-icon>
           <div class="name"></div>
-          <button class="power" aria-label="Allumer / éteindre"><ha-icon icon="mdi:power"></ha-icon><span></span></button>
+          <button class="power" aria-label="${t(this._hass, 'Turn on / off')}"><ha-icon icon="mdi:power"></ha-icon><span></span></button>
         </div>
         <div class="controls">
-          <button class="step minus" aria-label="Baisser la consigne"><ha-icon icon="mdi:minus"></ha-icon></button>
+          <button class="step minus" aria-label="${t(this._hass, 'Lower the target')}"><ha-icon icon="mdi:minus"></ha-icon></button>
           <div class="target"></div>
-          <button class="step plus" aria-label="Monter la consigne"><ha-icon icon="mdi:plus"></ha-icon></button>
+          <button class="step plus" aria-label="${t(this._hass, 'Raise the target')}"><ha-icon icon="mdi:plus"></ha-icon></button>
         </div>
         <div class="status"></div>
       </ha-card>`;
@@ -4003,7 +4234,7 @@ class M3ThermostatCard extends HTMLElement {
     const a = s.attributes;
     const unavailable = s.state === 'unavailable' || s.state === 'unknown';
     const on = !unavailable && s.state !== 'off';
-    const mode = MODES[s.state] ?? { label: s.state, icon: 'mdi:thermostat' };
+    const mode = MODES[s.state] ?? { icon: 'mdi:thermostat' };
     const target = this._target();
 
     this.toggleAttribute('unavailable', unavailable);
@@ -4011,9 +4242,10 @@ class M3ThermostatCard extends HTMLElement {
     this.toggleAttribute('no-target', target == null);
     this._els.name.textContent = this._config.name ?? a.friendly_name ?? this._config.entity;
     this._els.icon.icon = this._config.icon ?? mode.icon;
-    this._els.powerLabel.textContent = on ? 'Marche' : 'Arrêt';
+    this._els.powerLabel.textContent = t(this._hass, on ? 'On' : 'Off');
     this._els.target.textContent = target == null ? '—' : fmt(target);
-    const parts = [unavailable ? 'Indisponible' : mode.label];
+    // Nom du mode traduit par Home Assistant (l'état d'un thermostat est son mode).
+    const parts = [unavailable ? t(this._hass, 'Unavailable') : (this._hass.formatEntityState?.(s) ?? s.state)];
     if (a.current_temperature != null) parts.push(`${fmt(a.current_temperature)} °C`);
     this._els.status.textContent = parts.join(' • ');
 
@@ -4068,7 +4300,7 @@ if (!customElements.get('m3-thermostat-card')) {
   window.customCards.push({
     type: 'm3-thermostat-card',
     name: 'M3 Thermostat',
-    description: 'Thermostat Material 3 avec consigne réglable et affichage immédiat',
+    description: t(null, 'Material 3 thermostat with an adjustable target and instant feedback'),
     preview: true,
   });
 }
@@ -4136,7 +4368,7 @@ class M3WeatherCardEditor extends M3CardEditor {
         {
           name: 'forecast_type', selector: {
             select: { mode: 'dropdown', options: [
-              { value: 'hourly', label: 'Heure par heure' }, { value: 'daily', label: 'Jour par jour' }, { value: 'none', label: 'Aucune' },
+              { value: 'hourly', label: 'Hourly' }, { value: 'daily', label: 'Daily' }, { value: 'none', label: 'None' },
             ] },
           },
         },
@@ -4145,7 +4377,7 @@ class M3WeatherCardEditor extends M3CardEditor {
     },
   ];
 
-  static labels = { entity: 'Météo', name: 'Nom', forecast_type: 'Prévisions', forecast_slots: 'Nombre de prévisions' };
+  static labels = { entity: 'Weather', name: 'Name', forecast_type: 'Forecast', forecast_slots: 'Number of forecasts' };
 }
 
 class M3WeatherCard extends HTMLElement {
@@ -4159,7 +4391,7 @@ class M3WeatherCard extends HTMLElement {
   }
 
   setConfig(config) {
-    if (!config || !config.entity) throw new Error('m3-weather-card : « entity » est obligatoire');
+    if (!config || !config.entity) throw new Error('m3-weather-card: "entity" is required');
     this._config = { forecast_type: 'hourly', forecast_slots: 8, ...config };
     this.toggleAttribute('no-forecast', this._config.forecast_type === 'none');
     if (!this.shadowRoot) this._build();
@@ -4248,7 +4480,7 @@ class M3WeatherCard extends HTMLElement {
     const s = this._stateObj;
     const e = this._els;
     if (!s) {
-      e.condition.textContent = 'Météo introuvable';
+      e.condition.textContent = t(this._hass, 'Weather not found');
       return;
     }
     const a = s.attributes;
@@ -4260,7 +4492,7 @@ class M3WeatherCard extends HTMLElement {
     e.temp.textContent = this._num(a.temperature, '°');
     const details = [];
     if (a.apparent_temperature != null && Math.round(a.apparent_temperature) !== Math.round(a.temperature)) {
-      details.push(`Ressenti ${this._num(a.apparent_temperature, '°')}`);
+      details.push(t(this._hass, 'Feels like {temp}', { temp: this._num(a.apparent_temperature, '°') }));
     }
     if (a.humidity != null) details.push(`${this._num(a.humidity)} %`);
     if (a.wind_speed != null) details.push(`${this._num(a.wind_speed)} ${a.wind_speed_unit ?? 'km/h'}`);
@@ -4279,7 +4511,7 @@ class M3WeatherCard extends HTMLElement {
       when.className = 'when';
       when.textContent = daily
         ? date.toLocaleDateString(lang, { weekday: 'short' }).replace('.', '')
-        : `${date.getHours()} h`;
+        : date.toLocaleTimeString(lang, { hour: 'numeric' });
       const icon = document.createElement('ha-icon');
       icon.icon = this._icon(f.condition, daily ? null : date);
       icon.style.setProperty('--m3-slot', WEATHER[f.condition]?.[1] ?? 'inherit');
@@ -4307,7 +4539,7 @@ if (!customElements.get('m3-weather-card')) {
   window.customCards.push({
     type: 'm3-weather-card',
     name: 'M3 Weather',
-    description: 'Météo Material 3 : conditions actuelles teintées selon le temps et prévisions heure par heure ou jour par jour',
+    description: t(null, 'Material 3 weather: current conditions tinted by the weather, with an hourly or daily forecast'),
     preview: true,
   });
 }

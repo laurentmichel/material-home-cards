@@ -112,8 +112,8 @@ class M3MediaCardEditor extends M3CardEditor {
   ];
 
   static labels = {
-    entity: 'Lecteur', name: 'Nom', icon: 'Icône', show_progress: 'Progression', show_volume: 'Volume',
-    show_source: 'Application / source', artwork_colors: 'Couleurs de la pochette',
+    entity: 'Player', name: 'Name', icon: 'Icon', show_progress: 'Progress', show_volume: 'Volume',
+    show_source: 'App / source', artwork_colors: 'Artwork colors',
   };
 }
 
@@ -129,7 +129,7 @@ class M3MediaCard extends HTMLElement {
   }
 
   setConfig(config) {
-    if (!config || !config.entity) throw new Error('m3-media-card : « entity » est obligatoire');
+    if (!config || !config.entity) throw new Error('m3-media-card: "entity" is required');
     this._config = { show_progress: true, show_volume: true, show_source: true, artwork_colors: true, ...config };
     if (!this.shadowRoot) this._build();
     this._artColor = undefined;
@@ -166,21 +166,21 @@ class M3MediaCard extends HTMLElement {
             <div class="title"></div><div class="artist"></div>
             <div class="source"><ha-icon></ha-icon><span></span></div>
           </div>
-          <button class="power" title="Marche / arrêt"><ha-icon icon="mdi:power"></ha-icon></button>
+          <button class="power" title="${t(this._hass, 'Turn on / off')}"><ha-icon icon="mdi:power"></ha-icon></button>
         </div>
         <div class="progress">
           <div class="bar"><div class="fill"></div></div>
           <div class="times"><span class="pos"></span><span class="dur"></span></div>
         </div>
         <div class="controls">
-          <button class="small shuffle" title="Aléatoire"><ha-icon icon="mdi:shuffle-variant"></ha-icon></button>
-          <button class="prev" title="Précédent"><ha-icon icon="mdi:skip-previous"></ha-icon></button>
-          <button class="play" title="Lecture / pause"><ha-icon></ha-icon></button>
-          <button class="next" title="Suivant"><ha-icon icon="mdi:skip-next"></ha-icon></button>
-          <button class="small repeat" title="Répéter"><ha-icon></ha-icon></button>
+          <button class="small shuffle" title="${t(this._hass, 'Shuffle')}"><ha-icon icon="mdi:shuffle-variant"></ha-icon></button>
+          <button class="prev" title="${t(this._hass, 'Previous')}"><ha-icon icon="mdi:skip-previous"></ha-icon></button>
+          <button class="play" title="${t(this._hass, 'Play / pause')}"><ha-icon></ha-icon></button>
+          <button class="next" title="${t(this._hass, 'Next')}"><ha-icon icon="mdi:skip-next"></ha-icon></button>
+          <button class="small repeat" title="${t(this._hass, 'Repeat')}"><ha-icon></ha-icon></button>
         </div>
         <div class="volume">
-          <button class="mute" title="Muet"><ha-icon></ha-icon></button>
+          <button class="mute" title="${t(this._hass, 'Mute')}"><ha-icon></ha-icon></button>
           <div class="vbar"><div class="vfill"></div></div>
           <span class="vpct"></span>
         </div>
@@ -243,7 +243,7 @@ class M3MediaCard extends HTMLElement {
     this.toggleAttribute('seekable', this._supports(F.SEEK));
 
     const name = c.name ?? a.friendly_name ?? c.entity;
-    const stateText = unavailable ? 'Indisponible' : (this._hass.formatEntityState?.(s) ?? s.state);
+    const stateText = unavailable ? t(this._hass, 'Unavailable') : (this._hass.formatEntityState?.(s) ?? s.state);
     if (hasMedia) {
       e.title.textContent = a.media_title ?? name;
       e.artist.textContent = [a.media_artist ?? a.media_series_title, a.media_album_name].filter(Boolean).join(' • ') || name;
@@ -442,7 +442,7 @@ if (!customElements.get('m3-media-card')) {
   window.customCards.push({
     type: 'm3-media-card',
     name: 'M3 Media',
-    description: 'Lecteur multimédia Material 3 : pochette, progression, commandes, volume et couleurs de la pochette',
+    description: t(null, 'Material 3 media player: artwork, progress, controls, volume and artwork colors'),
     preview: true,
   });
 }

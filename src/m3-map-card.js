@@ -53,12 +53,12 @@ class M3MapCardEditor extends M3CardEditor {
   ];
 
   static labels = {
-    entity: 'Caméra de la carte', mower: 'Robot', battery: 'Batterie', lawn_color: 'Couleur de la pelouse', height: 'Hauteur max.',
+    entity: 'Map camera', mower: 'Robot', battery: 'Battery', lawn_color: 'Lawn color', height: 'Max height',
   };
 
   static helpers = {
-    mower: 'Facultatif : son état s’affiche dans une pastille sur la carte',
-    lawn_color: 'Couleur CSS, vide : vert',
+    mower: 'Optional: its state is shown in a chip on the map',
+    lawn_color: 'CSS color, empty: green',
   };
 }
 
@@ -73,7 +73,7 @@ class M3MapCard extends HTMLElement {
   }
 
   setConfig(config) {
-    if (!config || !config.entity) throw new Error('m3-map-card : « entity » (caméra) est obligatoire');
+    if (!config || !config.entity) throw new Error('m3-map-card: "entity" (camera) is required');
     this._config = config;
     if (!this.shadowRoot) this._build();
     const st = this._card.style;
@@ -97,7 +97,7 @@ class M3MapCard extends HTMLElement {
   _build() {
     const root = this.attachShadow({ mode: 'open' });
     root.innerHTML = `<style>${STYLE}</style>
-      <ha-card><div class="map"><div class="empty">Chargement de la carte…</div></div><div class="chip"></div></ha-card>`;
+      <ha-card><div class="map"><div class="empty">${t(this._hass, 'Loading the map…')}</div></div><div class="chip"></div></ha-card>`;
     this._card = root.querySelector('ha-card');
     this._map = root.querySelector('.map');
     this._chip = root.querySelector('.chip');
@@ -112,7 +112,7 @@ class M3MapCard extends HTMLElement {
     const cam = this._hass.states[this._config.entity];
     const picture = cam?.attributes.entity_picture;
     if (!picture) {
-      this._map.innerHTML = '<div class="empty">Carte indisponible</div>';
+      this._map.innerHTML = `<div class="empty">${t(this._hass, 'Map unavailable')}</div>`;
       this._url = null;
       return;
     }
@@ -147,7 +147,7 @@ class M3MapCard extends HTMLElement {
       }
     } catch (err) {
       console.warn('m3-map-card : carte indisponible', err);
-      this._map.innerHTML = '<div class="empty">Carte indisponible</div>';
+      this._map.innerHTML = `<div class="empty">${t(this._hass, 'Map unavailable')}</div>`;
     }
   }
 
@@ -243,7 +243,7 @@ if (!customElements.get('m3-map-card')) {
   window.customCards.push({
     type: 'm3-map-card',
     name: 'M3 Map',
-    description: 'Carte d’un robot (tondeuse Dreame...) redessinée aux couleurs Material 3, avec son état',
+    description: t(null, 'Robot map (Dreame mower...) redrawn in Material 3 colors, with its state'),
     preview: true,
   });
 }

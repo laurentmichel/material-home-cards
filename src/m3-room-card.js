@@ -58,15 +58,15 @@ class M3RoomCardEditor extends M3CardEditor {
   ];
 
   static labels = {
-    name: 'Nom', icon: 'Icône', light: 'Lumière', climate: 'Thermostat',
-    temperature: 'Température', humidity: 'Humidité', tap_action: 'Appui', hold_action: 'Appui long',
+    name: 'Name', icon: 'Icon', light: 'Light', climate: 'Thermostat',
+    temperature: 'Temperature', humidity: 'Humidity', tap_action: 'Tap', hold_action: 'Long press',
   };
 
   static helpers = {
-    light: 'Le fond prend sa couleur quand elle est allumée',
-    climate: 'L’icône devient une flamme quand le chauffage est en marche ; sa température sert si aucun capteur n’est choisi',
-    tap_action: 'Par exemple « Naviguer » vers #salon pour ouvrir une popup. Vide : fenêtre de détails',
-    hold_action: 'Vide : allumer / éteindre la lumière',
+    light: 'The background takes its color when it is on',
+    climate: 'The icon becomes a flame while the heating is on; its temperature is used when no sensor is set',
+    tap_action: 'For example "Navigate" to #living-room to open a popup. Empty: more-info dialog',
+    hold_action: 'Empty: turn the light on / off',
   };
 }
 
@@ -79,13 +79,13 @@ class M3RoomCard extends HTMLElement {
   static getStubConfig(hass) {
     const entities = Object.keys(hass.states);
     const byClass = (dc) => entities.find((e) => e.startsWith('sensor.') && hass.states[e].attributes.device_class === dc);
-    const config = { name: 'Salon', light: entities.find((e) => e.startsWith('light.')), temperature: byClass('temperature'), humidity: byClass('humidity') };
+    const config = { name: t(hass, 'Living room'), light: entities.find((e) => e.startsWith('light.')), temperature: byClass('temperature'), humidity: byClass('humidity') };
     for (const key of Object.keys(config)) if (!config[key]) delete config[key];
     return config;
   }
 
   setConfig(config) {
-    if (!config || !config.name) throw new Error('m3-room-card : « name » est obligatoire');
+    if (!config || !config.name) throw new Error('m3-room-card: "name" is required');
     this._config = config;
     if (!this.shadowRoot) this._build();
     if (this._hass) this._render();
@@ -217,7 +217,7 @@ if (!customElements.get('m3-room-card')) {
   window.customCards.push({
     type: 'm3-room-card',
     name: 'M3 Room',
-    description: 'Pièce Material 3 : température, humidité, couleur de la lumière et chauffage en cours',
+    description: t(null, 'Material 3 room: temperature, humidity, light color and heating'),
     preview: true,
   });
 }

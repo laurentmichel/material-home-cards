@@ -46,7 +46,7 @@ class M3LightSliderCardEditor extends M3CardEditor {
     },
   ];
 
-  static labels = { entity: 'Entité', name: 'Nom', icon: 'Icône' };
+  static labels = { entity: 'Entity', name: 'Name', icon: 'Icon' };
 }
 
 class M3LightSliderCard extends HTMLElement {
@@ -58,7 +58,7 @@ class M3LightSliderCard extends HTMLElement {
 
   setConfig(config) {
     if (!config || !config.entity || !config.entity.startsWith('light.')) {
-      throw new Error('m3-light-slider-card : « entity » doit être une entité light.*');
+      throw new Error('m3-light-slider-card: "entity" must be a light.* entity');
     }
     this._config = config;
     if (!this.shadowRoot) this._build();
@@ -131,7 +131,7 @@ class M3LightSliderCard extends HTMLElement {
 
     this._els.name.textContent = this._config.name ?? a.friendly_name ?? this._config.entity;
     this._els.icon.icon = this._config.icon ?? a.icon ?? (on ? 'mdi:lightbulb' : 'mdi:lightbulb-outline');
-    this._els.state.textContent = unavailable ? 'Indisponible' : on ? 'Allumée' : 'Éteinte';
+    this._els.state.textContent = unavailable ? t(this._hass, 'Unavailable') : (this._hass.formatEntityState?.(s) ?? t(this._hass, on ? 'On' : 'Off'));
     this._els.pct.textContent = on ? `${pct} %` : '';
 
     const st = this._card.style;
@@ -246,7 +246,7 @@ if (!customElements.get('m3-light-slider-card')) {
   window.customCards.push({
     type: 'm3-light-slider-card',
     name: 'M3 Light Slider',
-    description: 'Slider de luminosité Material 3 teinté avec la couleur de la lumière',
+    description: t(null, 'Material 3 brightness slider tinted with the light color'),
     preview: true,
   });
 }

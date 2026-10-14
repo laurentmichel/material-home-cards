@@ -59,9 +59,9 @@ class M3SceneCardEditor extends M3CardEditor {
       name: 'variant', selector: {
         select: {
           mode: 'box', options: [
-            { value: 'group', label: 'Groupe de boutons' },
-            { value: 'tiles', label: 'Tuiles' },
-            { value: 'carousel', label: 'Carrousel' },
+            { value: 'group', label: 'Button group' },
+            { value: 'tiles', label: 'Tiles' },
+            { value: 'carousel', label: 'Carousel' },
           ],
         },
       },
@@ -71,10 +71,10 @@ class M3SceneCardEditor extends M3CardEditor {
         object: {
           multiple: true, label_field: 'name', description_field: 'entity',
           fields: {
-            entity: { label: 'Scène', required: true, selector: { entity: { domain: ['scene', 'script'] } } },
-            name: { label: 'Nom', selector: { text: {} } },
-            icon: { label: 'Icône', selector: { icon: {} } },
-            color: { label: 'Couleur', selector: { ui_color: {} } },
+            entity: { label: 'Scene', required: true, selector: { entity: { domain: ['scene', 'script'] } } },
+            name: { label: 'Name', selector: { text: {} } },
+            icon: { label: 'Icon', selector: { icon: {} } },
+            color: { label: 'Color', selector: { ui_color: {} } },
           },
         },
       },
@@ -82,10 +82,10 @@ class M3SceneCardEditor extends M3CardEditor {
     { name: 'off', selector: { entity: { domain: ['light', 'switch', 'group'] } } },
   ];
 
-  static labels = { variant: 'Style', scenes: 'Scènes', off: 'Bouton « Éteindre »' };
+  static labels = { variant: 'Style', scenes: 'Scenes', off: '"Turn off" button' };
 
   static helpers = {
-    off: 'Facultatif : ajoute un bouton qui éteint cette entité ; éteinte, aucune scène n’est active',
+    off: 'Optional: adds a button that turns this entity off; when it is off, no scene is active',
   };
 }
 
@@ -102,12 +102,12 @@ class M3SceneCard extends HTMLElement {
 
   setConfig(config) {
     if (!config || !Array.isArray(config.scenes) || !config.scenes.length) {
-      throw new Error('m3-scene-card : « scenes » doit contenir au moins une scène');
+      throw new Error('m3-scene-card: "scenes" must contain at least one scene');
     }
     if (config.variant && !VARIANTS.includes(config.variant)) {
-      throw new Error(`m3-scene-card : « variant » doit valoir ${VARIANTS.join(', ')}`);
+      throw new Error(`m3-scene-card: "variant" must be one of ${VARIANTS.join(', ')}`);
     }
-    if (config.scenes.some((s) => !s.entity)) throw new Error('m3-scene-card : chaque scène a besoin d’une « entity »');
+    if (config.scenes.some((s) => !s.entity)) throw new Error('m3-scene-card: every scene needs an "entity"');
     this._config = { variant: 'group', ...config };
     // `off` accepte une entité ou un objet { entity, name, icon, color }.
     this._off = typeof config.off === 'string' ? { entity: config.off } : config.off ?? null;
@@ -134,7 +134,7 @@ class M3SceneCard extends HTMLElement {
     root.innerHTML = `<style>${STYLE}</style><ha-card><div class="items"></div></ha-card>`;
     const list = root.querySelector('.items');
     const items = this._config.scenes.map((scene, i) => ({ ...scene, color: scene.color ?? DEFAULT_COLORS[i % DEFAULT_COLORS.length] }));
-    if (this._off) items.push({ icon: 'mdi:power', name: 'Éteindre', color: 'disabled', ...this._off, isOff: true });
+    if (this._off) items.push({ icon: 'mdi:power', name: t(this._hass, 'Turn off'), color: 'disabled', ...this._off, isOff: true });
     this._items = items.map((item) => {
       const el = document.createElement('div');
       el.className = 'item';
@@ -234,7 +234,7 @@ if (!customElements.get('m3-scene-card')) {
   window.customCards.push({
     type: 'm3-scene-card',
     name: 'M3 Scenes',
-    description: 'Sélecteur de scènes Material 3 : groupe de boutons, tuiles ou carrousel, scène active mise en avant',
+    description: t(null, 'Material 3 scene selector: button group, tiles or carousel, with the active scene highlighted'),
     preview: true,
   });
 }

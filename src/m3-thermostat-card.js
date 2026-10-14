@@ -54,16 +54,16 @@ const SEND_DELAY = 600;
 const PENDING_TTL = 8000;
 
 const MODES = {
-  heat: { label: 'Chauffage', icon: 'mdi:fire' },
-  cool: { label: 'Climatisation', icon: 'mdi:snowflake' },
-  heat_cool: { label: 'Chaud / froid', icon: 'mdi:sun-snowflake-variant' },
-  auto: { label: 'Auto', icon: 'mdi:thermostat-auto' },
-  dry: { label: 'Déshumidification', icon: 'mdi:water-percent' },
-  fan_only: { label: 'Ventilation', icon: 'mdi:fan' },
-  off: { label: 'Arrêt', icon: 'mdi:power' },
+  heat: { icon: 'mdi:fire' },
+  cool: { icon: 'mdi:snowflake' },
+  heat_cool: { icon: 'mdi:sun-snowflake-variant' },
+  auto: { icon: 'mdi:thermostat-auto' },
+  dry: { icon: 'mdi:water-percent' },
+  fan_only: { icon: 'mdi:fan' },
+  off: { icon: 'mdi:power' },
 };
 
-const fmt = (n) => Number(n).toLocaleString('fr-FR', { maximumFractionDigits: 1 });
+const fmt = (n) => Number(n).toLocaleString(langOf(), { maximumFractionDigits: 1 });
 
 class M3ThermostatCardEditor extends M3CardEditor {
   static schema = [
@@ -89,13 +89,13 @@ class M3ThermostatCardEditor extends M3CardEditor {
   ];
 
   static labels = {
-    entity: 'Entité', name: 'Nom', icon: 'Icône',
-    step: 'Pas des boutons − / +', hvac_mode: 'Mode au démarrage',
+    entity: 'Entity', name: 'Name', icon: 'Icon',
+    step: 'Step of the − / + buttons', hvac_mode: 'Mode when turned on',
   };
 
   static helpers = {
-    icon: 'Laisser vide pour que l’icône suive le mode',
-    hvac_mode: 'Mode activé par le bouton Marche (par défaut : chauffage)',
+    icon: 'Leave empty so the icon follows the mode',
+    hvac_mode: 'Mode set by the on button (default: heat)',
   };
 }
 
@@ -108,7 +108,7 @@ class M3ThermostatCard extends HTMLElement {
 
   setConfig(config) {
     if (!config || !config.entity || !config.entity.startsWith('climate.')) {
-      throw new Error('m3-thermostat-card : « entity » doit être une entité climate.*');
+      throw new Error('m3-thermostat-card: "entity" must be a climate.* entity');
     }
     this._config = { step: 0.5, ...config };
     if (!this.shadowRoot) this._build();
@@ -138,12 +138,12 @@ class M3ThermostatCard extends HTMLElement {
         <div class="header">
           <ha-icon class="mode-icon"></ha-icon>
           <div class="name"></div>
-          <button class="power" aria-label="Allumer / éteindre"><ha-icon icon="mdi:power"></ha-icon><span></span></button>
+          <button class="power" aria-label="${t(this._hass, 'Turn on / off')}"><ha-icon icon="mdi:power"></ha-icon><span></span></button>
         </div>
         <div class="controls">
-          <button class="step minus" aria-label="Baisser la consigne"><ha-icon icon="mdi:minus"></ha-icon></button>
+          <button class="step minus" aria-label="${t(this._hass, 'Lower the target')}"><ha-icon icon="mdi:minus"></ha-icon></button>
           <div class="target"></div>
-          <button class="step plus" aria-label="Monter la consigne"><ha-icon icon="mdi:plus"></ha-icon></button>
+          <button class="step plus" aria-label="${t(this._hass, 'Raise the target')}"><ha-icon icon="mdi:plus"></ha-icon></button>
         </div>
         <div class="status"></div>
       </ha-card>`;
@@ -179,7 +179,7 @@ class M3ThermostatCard extends HTMLElement {
     const a = s.attributes;
     const unavailable = s.state === 'unavailable' || s.state === 'unknown';
     const on = !unavailable && s.state !== 'off';
-    const mode = MODES[s.state] ?? { label: s.state, icon: 'mdi:thermostat' };
+    const mode = MODES[s.state] ?? { icon: 'mdi:thermostat' };
     const target = this._target();
 
     this.toggleAttribute('unavailable', unavailable);
@@ -187,9 +187,10 @@ class M3ThermostatCard extends HTMLElement {
     this.toggleAttribute('no-target', target == null);
     this._els.name.textContent = this._config.name ?? a.friendly_name ?? this._config.entity;
     this._els.icon.icon = this._config.icon ?? mode.icon;
-    this._els.powerLabel.textContent = on ? 'Marche' : 'Arrêt';
+    this._els.powerLabel.textContent = t(this._hass, on ? 'On' : 'Off');
     this._els.target.textContent = target == null ? '—' : fmt(target);
-    const parts = [unavailable ? 'Indisponible' : mode.label];
+    // Nom du mode traduit par Home Assistant (l'état d'un thermostat est son mode).
+    const parts = [unavailable ? t(this._hass, 'Unavailable') : (this._hass.formatEntityState?.(s) ?? s.state)];
     if (a.current_temperature != null) parts.push(`${fmt(a.current_temperature)} °C`);
     this._els.status.textContent = parts.join(' • ');
 
@@ -244,7 +245,7 @@ if (!customElements.get('m3-thermostat-card')) {
   window.customCards.push({
     type: 'm3-thermostat-card',
     name: 'M3 Thermostat',
-    description: 'Thermostat Material 3 avec consigne réglable et affichage immédiat',
+    description: t(null, 'Material 3 thermostat with an adjustable target and instant feedback'),
     preview: true,
   });
 }
