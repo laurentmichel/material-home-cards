@@ -72,6 +72,7 @@ class M3ListCardEditor extends M3CardEditor {
             label: { label: 'Sous-titre (vide : état de l’entité)', selector: { text: {} } },
             label_on: { label: 'Sous-titre quand c’est actif', selector: { text: {} } },
             label_off: { label: 'Sous-titre quand c’est inactif', selector: { text: {} } },
+            alert_below: { label: 'Alerte sous (valeur)', selector: { number: { mode: 'box', step: 'any' } } },
             icon: { label: 'Icône', selector: { icon: {} } },
             trailing: {
               label: 'À droite', selector: {
@@ -218,6 +219,14 @@ class M3ListCard extends HTMLElement {
 
     const tinted = active && this._config.dynamic !== false;
     const st = r.el.style;
+    // Valeur sous le seuil d'alerte (batterie faible...) : couleurs d'erreur.
+    const value = parseFloat(s?.state);
+    if (row.alert_below != null && !isNaN(value) && value < Number(row.alert_below)) {
+      st.setProperty('--m3-bg', 'var(--md-sys-color-error-container, rgba(var(--rgb-error-color, 219, 68, 55), 0.2))');
+      st.setProperty('--m3-fg', 'var(--md-sys-color-on-error-container, var(--primary-text-color))');
+      st.setProperty('--m3-icon-fg', 'var(--md-sys-color-error, var(--error-color))');
+      return;
+    }
     st.setProperty('--m3-bg', tinted ? 'var(--md-sys-color-primary-container, rgba(var(--rgb-primary-color), 0.18))' : SURFACE);
     st.setProperty('--m3-fg', tinted ? 'var(--md-sys-color-on-primary-container, var(--primary-text-color))' : ON_SURFACE);
     st.setProperty('--m3-icon-fg', tinted ? 'var(--md-sys-color-primary, var(--primary-color))' : ON_SURFACE);

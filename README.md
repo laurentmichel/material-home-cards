@@ -15,6 +15,8 @@ et retombent sur les couleurs Home Assistant sinon.
 | Lecteur multimédia | `custom:m3-media-card` |
 | Accueil « Bonjour » avec les personnes | `custom:m3-person-card` |
 | Carte d'un robot (tondeuse Dreame…) | `custom:m3-map-card` |
+| Météo et prévisions | `custom:m3-weather-card` |
+| Tâche en cours (impression 3D, lave-linge…) | `custom:m3-progress-card` |
 | Bouton pour n'importe quelle entité | `custom:m3-button-card` |
 | Popup ouverte par un `#hash` | `custom:m3-popup-card` |
 | Pièce : température, humidité, lumière et chauffage | `custom:m3-room-card` |
@@ -228,6 +230,33 @@ lawn_color: '#6abf69'            # facultatif
 height: 360                      # facultatif, hauteur maximale en px
 ```
 
+## `m3-weather-card`
+
+Météo : température, ciel, ressenti, humidité et vent, sur un fond teinté selon le temps (icônes de nuit après
+le coucher du soleil), puis les prévisions heure par heure ou jour par jour, reçues en direct.
+
+```yaml
+type: custom:m3-weather-card
+entity: weather.maison
+forecast_type: hourly    # facultatif : hourly (défaut), daily ou none
+forecast_slots: 8        # facultatif, nombre de prévisions
+```
+
+## `m3-progress-card`
+
+Suivi d'une tâche : état, pourcentage, barre de progression, temps restant et heure de fin (mis à jour en continu).
+
+```yaml
+type: custom:m3-progress-card
+entity: sensor.imprimante_etat              # état affiché en sous-titre
+name: Impression
+progress: sensor.imprimante_progression     # facultatif, en %
+end_time: sensor.imprimante_heure_de_fin    # facultatif, horodatage : le temps restant en est déduit
+remaining: sensor.imprimante_temps_restant  # facultatif, sinon une durée (min, h ou s)
+image: image.imprimante_modele              # facultatif, vignette
+color: orange                               # facultatif
+```
+
 ## `m3-popup-card`
 
 Popup qui s'ouvre quand l'URL contient son `#hash` : un panneau qui glisse depuis le bas sur mobile, une
@@ -318,6 +347,9 @@ rows:
   - entity: switch.nettoyage_en_profondeur
     label_on: En profondeur      # sous-titre selon l'état
     label_off: Normal
+  - entity: sensor.detecteur_batterie
+    trailing: state
+    alert_below: 20              # ligne en couleurs d'alerte sous cette valeur
   - entity: sensor.maison_temperature
     trailing: state              # auto, switch, state, chevron ou none
   - name: Bureau
@@ -372,7 +404,7 @@ et **recharge automatiquement la page Home Assistant** à chaque sauvegarde dans
 1. `npm run dev` : l'adresse à utiliser s'affiche, par exemple `http://192.168.1.20:5000/material-home-cards-dev.js`
 2. Paramètres → Tableaux de bord → ⋮ → Ressources → ajouter cette adresse en **module JavaScript** (une seule fois)
 3. Dans un tableau de bord de test, utiliser les types `-dev` :
-   `custom:m3-thermostat-card-dev`, `custom:m3-light-slider-card-dev`, `custom:m3-graph-card-dev`, `custom:m3-button-card-dev`, `custom:m3-popup-card-dev`, `custom:m3-room-card-dev`, `custom:m3-list-card-dev`, `custom:m3-scene-card-dev`, `custom:m3-multi-graph-card-dev`, `custom:m3-media-card-dev`, `custom:m3-person-card-dev`, `custom:m3-map-card-dev` et `custom:m3-badge-dev`
+   `custom:m3-thermostat-card-dev`, `custom:m3-light-slider-card-dev`, `custom:m3-graph-card-dev`, `custom:m3-button-card-dev`, `custom:m3-popup-card-dev`, `custom:m3-room-card-dev`, `custom:m3-list-card-dev`, `custom:m3-scene-card-dev`, `custom:m3-multi-graph-card-dev`, `custom:m3-media-card-dev`, `custom:m3-person-card-dev`, `custom:m3-map-card-dev`, `custom:m3-weather-card-dev`, `custom:m3-progress-card-dev` et `custom:m3-badge-dev`
 
 Les types `-dev` cohabitent avec la version installée par HACS, qui reste intacte. Le port se change avec
 `PORT=5001 npm run dev`. Si Home Assistant est ouvert en **https**, le navigateur bloque une ressource en http :

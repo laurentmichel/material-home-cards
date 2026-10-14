@@ -1,5 +1,5 @@
-/*! Material Home Cards v1.15.0 — https://github.com/laurentmichel/material-home-cards */
-console.info('%c MATERIAL-HOME-CARDS %c v1.15.0 ', 'color:#fff;background:#6750a4;font-weight:700', 'color:#6750a4;background:#eaddff');
+/*! Material Home Cards v1.16.0 — https://github.com/laurentmichel/material-home-cards */
+console.info('%c MATERIAL-HOME-CARDS %c v1.16.0 ', 'color:#fff;background:#6750a4;font-weight:700', 'color:#6750a4;background:#eaddff');
 
 // ---- shared/color.js ----
 // Couleurs nommées de HA (amber, blue...) → variables du thème ; le reste (hex, rgb) tel quel.
@@ -1281,6 +1281,7 @@ class M3ListCardEditor extends M3CardEditor {
             label: { label: 'Sous-titre (vide : état de l’entité)', selector: { text: {} } },
             label_on: { label: 'Sous-titre quand c’est actif', selector: { text: {} } },
             label_off: { label: 'Sous-titre quand c’est inactif', selector: { text: {} } },
+            alert_below: { label: 'Alerte sous (valeur)', selector: { number: { mode: 'box', step: 'any' } } },
             icon: { label: 'Icône', selector: { icon: {} } },
             trailing: {
               label: 'À droite', selector: {
@@ -1427,6 +1428,14 @@ class M3ListCard extends HTMLElement {
 
     const tinted = active && this._config.dynamic !== false;
     const st = r.el.style;
+    // Valeur sous le seuil d'alerte (batterie faible...) : couleurs d'erreur.
+    const value = parseFloat(s?.state);
+    if (row.alert_below != null && !isNaN(value) && value < Number(row.alert_below)) {
+      st.setProperty('--m3-bg', 'var(--md-sys-color-error-container, rgba(var(--rgb-error-color, 219, 68, 55), 0.2))');
+      st.setProperty('--m3-fg', 'var(--md-sys-color-on-error-container, var(--primary-text-color))');
+      st.setProperty('--m3-icon-fg', 'var(--md-sys-color-error, var(--error-color))');
+      return;
+    }
     st.setProperty('--m3-bg', tinted ? 'var(--md-sys-color-primary-container, rgba(var(--rgb-primary-color), 0.18))' : SURFACE);
     st.setProperty('--m3-fg', tinted ? 'var(--md-sys-color-on-primary-container, var(--primary-text-color))' : ON_SURFACE);
     st.setProperty('--m3-icon-fg', tinted ? 'var(--md-sys-color-primary, var(--primary-color))' : ON_SURFACE);
@@ -3143,6 +3152,203 @@ if (!customElements.get('m3-popup-card')) {
 }
 }
 
+// ---- m3-progress-card.js ----
+{
+// m3-progress-card — suivi d'une tâche en cours (impression 3D, lave-linge...) : état, pourcentage,
+// barre de progression Material 3, temps restant et heure de fin, mis à jour chaque minute.
+const STYLE = `
+:host { display: block; height: 100%; }
+ha-card {
+  height: 100%; box-sizing: border-box; padding: 18px 20px; border-radius: 28px; border: none; box-shadow: none; cursor: pointer;
+  background: color-mix(in srgb, var(--m3-accent) 14%, var(--md-sys-color-surface-container-high, var(--ha-card-background, var(--card-background-color))));
+  color: var(--md-sys-color-on-surface, var(--primary-text-color));
+  display: flex; flex-direction: column; gap: 14px;
+}
+.top { display: flex; align-items: center; gap: 14px; }
+.icon {
+  flex: none; width: 48px; height: 48px; border-radius: 16px; overflow: hidden; display: flex; align-items: center; justify-content: center;
+  background: color-mix(in srgb, var(--m3-accent) 22%, transparent); color: var(--m3-accent); --mdc-icon-size: 26px;
+}
+.icon img { width: 100%; height: 100%; object-fit: cover; }
+.icon img[hidden], .icon ha-icon[hidden] { display: none; }
+.text { flex: 1; min-width: 0; }
+.name { ${TITLE_FONT} white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.state { ${STATE_FONT} white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pct { flex: none; font-size: 1.9rem; font-weight: 400; letter-spacing: -0.5px; font-variant-numeric: tabular-nums; }
+.bar { position: relative; height: 12px; border-radius: 6px; background: color-mix(in srgb, var(--m3-accent) 18%, transparent); overflow: hidden; }
+.fill { position: absolute; inset: 0 auto 0 0; width: var(--m3-progress, 0%); border-radius: 6px; background: var(--m3-accent); transition: width 600ms ease; }
+.times { display: flex; justify-content: space-between; gap: 12px; ${STATE_FONT} }
+:host([no-progress]) .bar, :host([no-progress]) .pct { display: none; }
+:host([no-times]) .times { display: none; }
+`;
+
+const REFRESH_MS = 30 * 1000;
+
+const formatDuration = (minutes) => {
+  if (!isFinite(minutes) || minutes < 0) return null;
+  const m = Math.round(minutes);
+  if (m < 60) return `${m} min`;
+  return `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')}`;
+};
+
+class M3ProgressCardEditor extends M3CardEditor {
+  static schema = [
+    { name: 'entity', required: true, selector: { entity: {} } },
+    {
+      type: 'grid', name: '', schema: [
+        { name: 'name', selector: { text: {} } },
+        { name: 'icon', selector: { icon: {} }, context: { icon_entity: 'entity' } },
+        { name: 'progress', selector: { entity: { domain: ['sensor', 'number'] } } },
+        { name: 'end_time', selector: { entity: { domain: 'sensor', device_class: 'timestamp' } } },
+        { name: 'remaining', selector: { entity: { domain: 'sensor' } } },
+        { name: 'image', selector: { entity: { domain: ['image', 'camera'] } } },
+        { name: 'color', selector: { ui_color: {} } },
+      ],
+    },
+  ];
+
+  static labels = {
+    entity: 'État de la tâche', name: 'Nom', icon: 'Icône', progress: 'Progression (%)', end_time: 'Heure de fin',
+    remaining: 'Temps restant', image: 'Image', color: 'Couleur',
+  };
+
+  static helpers = {
+    end_time: 'Capteur horodatage : le temps restant en est déduit',
+    remaining: 'Sinon : capteur de durée (min, h ou s)',
+  };
+}
+
+class M3ProgressCard extends HTMLElement {
+  static async getConfigElement() {
+    await ensureHaForm();
+    return document.createElement('m3-progress-card-editor');
+  }
+
+  static getStubConfig(hass) {
+    const entities = Object.keys(hass.states);
+    return { entity: entities.find((e) => /print|lave|wash|dish/.test(e)) ?? entities[0] };
+  }
+
+  setConfig(config) {
+    if (!config || !config.entity) throw new Error('m3-progress-card : « entity » est obligatoire');
+    this._config = config;
+    if (!this.shadowRoot) this._build();
+    this._key = null;
+    if (this._hass) this._render();
+  }
+
+  getCardSize() { return 3; }
+
+  getGridOptions() { return { columns: 12, rows: 'auto', min_columns: 6 }; }
+
+  connectedCallback() { this._timer = setInterval(() => { this._key = null; this._render(); }, REFRESH_MS); }
+
+  disconnectedCallback() { clearInterval(this._timer); }
+
+  set hass(hass) {
+    this._hass = hass;
+    this._render();
+  }
+
+  _build() {
+    const root = this.attachShadow({ mode: 'open' });
+    root.innerHTML = `<style>${STYLE}</style>
+      <ha-card>
+        <div class="top">
+          <div class="icon"><img alt="" hidden><ha-state-icon></ha-state-icon></div>
+          <div class="text"><div class="name"></div><div class="state"></div></div>
+          <div class="pct"></div>
+        </div>
+        <div class="bar"><div class="fill"></div></div>
+        <div class="times"><span class="left"></span><span class="end"></span></div>
+      </ha-card>`;
+    const q = (s) => root.querySelector(s);
+    this._card = q('ha-card');
+    this._els = {
+      img: q('.icon img'), icon: q('ha-state-icon'), name: q('.name'), state: q('.state'), pct: q('.pct'),
+      left: q('.left'), end: q('.end'),
+    };
+    this._els.img.addEventListener('error', () => { this._els.img.hidden = true; this._els.icon.hidden = false; });
+    this._card.addEventListener('click', () => this._fire('hass-more-info', { entityId: this._config.entity }));
+  }
+
+  _state(id) { return id ? this._hass.states[id] : undefined; }
+
+  // Minutes restantes : depuis l'heure de fin, sinon depuis un capteur de durée.
+  _remaining() {
+    const end = this._state(this._config.end_time);
+    const endMs = Date.parse(end?.state);
+    if (!isNaN(endMs)) return { minutes: (endMs - Date.now()) / 60000, end: new Date(endMs) };
+    const rem = this._state(this._config.remaining);
+    const v = parseFloat(rem?.state);
+    if (isNaN(v)) return null;
+    const unit = rem.attributes.unit_of_measurement ?? 'min';
+    const minutes = unit === 'h' ? v * 60 : unit === 's' ? v / 60 : unit === 'd' ? v * 1440 : v;
+    return { minutes, end: new Date(Date.now() + minutes * 60000) };
+  }
+
+  _render() {
+    if (!this._els || !this._hass) return;
+    const c = this._config;
+    const s = this._state(c.entity);
+    const progress = parseFloat(this._state(c.progress)?.state);
+    const remaining = this._remaining();
+    const image = this._state(c.image);
+    const key = [s, this._state(c.progress), this._state(c.end_time), this._state(c.remaining), image].map((x) => x?.last_updated).join();
+    if (key === this._key) return;
+    this._key = key;
+
+    const e = this._els;
+    e.name.textContent = c.name ?? s?.attributes.friendly_name ?? c.entity;
+    e.state.textContent = !s ? 'Introuvable' : (this._hass.formatEntityState?.(s) ?? s.state);
+    Object.assign(e.icon, { hass: this._hass, stateObj: s, icon: c.icon });
+
+    const picture = image?.attributes.entity_picture;
+    const url = picture && !['unavailable', 'unknown'].includes(image.state) ? (this._hass.hassUrl?.(picture) ?? picture) : null;
+    e.img.hidden = !url;
+    e.icon.hidden = !!url;
+    if (url && e.img.getAttribute('src') !== url) e.img.src = url;
+
+    const hasProgress = !isNaN(progress);
+    this.toggleAttribute('no-progress', !hasProgress);
+    if (hasProgress) {
+      const pct = Math.max(0, Math.min(100, progress));
+      e.pct.textContent = `${Math.round(pct)} %`;
+      this._card.style.setProperty('--m3-progress', `${pct}%`);
+    }
+
+    const left = remaining && remaining.minutes > 0 ? formatDuration(remaining.minutes) : null;
+    this.toggleAttribute('no-times', !left);
+    if (left) {
+      e.left.textContent = `Reste ${left}`;
+      const lang = this._hass.locale?.language ?? 'fr';
+      const sameDay = remaining.end.toDateString() === new Date().toDateString();
+      const time = remaining.end.toLocaleTimeString(lang, { hour: '2-digit', minute: '2-digit' });
+      e.end.textContent = sameDay ? `Fin à ${time}` : `Fin ${remaining.end.toLocaleDateString(lang, { weekday: 'short' })} à ${time}`;
+    }
+
+    this._card.style.setProperty('--m3-accent', c.color ? cssColor(c.color) : 'var(--md-sys-color-primary, var(--primary-color))');
+  }
+
+  _fire(type, detail) {
+    this.dispatchEvent(new CustomEvent(type, { detail, bubbles: true, composed: true }));
+  }
+}
+
+defineEditor('m3-progress-card-editor', M3ProgressCardEditor);
+
+if (!customElements.get('m3-progress-card')) {
+  customElements.define('m3-progress-card', M3ProgressCard);
+  window.customCards = window.customCards || [];
+  window.customCards.push({
+    type: 'm3-progress-card',
+    name: 'M3 Progress',
+    description: 'Tâche en cours (impression 3D, lave-linge...) : pourcentage, barre de progression, temps restant et heure de fin',
+    preview: true,
+  });
+}
+}
+
 // ---- m3-room-card.js ----
 {
 // m3-room-card — carte pièce Material 3 : nom, icône, température et humidité de la pièce.
@@ -3863,6 +4069,245 @@ if (!customElements.get('m3-thermostat-card')) {
     type: 'm3-thermostat-card',
     name: 'M3 Thermostat',
     description: 'Thermostat Material 3 avec consigne réglable et affichage immédiat',
+    preview: true,
+  });
+}
+}
+
+// ---- m3-weather-card.js ----
+{
+// m3-weather-card — météo Material 3 : conditions actuelles teintées selon le temps, et prévisions
+// heure par heure (ou jour par jour) reçues en direct de Home Assistant.
+const STYLE = `
+:host { display: block; }
+ha-card {
+  overflow: hidden; box-sizing: border-box; padding: 20px; border-radius: 28px; border: none; box-shadow: none; cursor: pointer;
+  background: color-mix(in srgb, var(--m3-weather) 20%, var(--md-sys-color-surface-container-high, var(--ha-card-background, var(--card-background-color))));
+  color: var(--md-sys-color-on-surface, var(--primary-text-color));
+  transition: background 600ms ease;
+}
+.now { display: flex; align-items: center; gap: 16px; }
+.now .icon { flex: none; color: var(--m3-weather); --mdc-icon-size: 56px; display: flex; }
+.temp { font-size: 3rem; font-weight: 400; line-height: 1; letter-spacing: -1px; }
+.text { flex: 1; min-width: 0; }
+.condition { ${TITLE_FONT} white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.details { ${STATE_FONT} white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.forecast {
+  display: flex; gap: 4px; margin-top: 18px; overflow-x: auto; scrollbar-width: none; scroll-snap-type: x proximity;
+}
+.forecast::-webkit-scrollbar { display: none; }
+:host([no-forecast]) .forecast { display: none; }
+.slot {
+  flex: 1 0 52px; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 4px; border-radius: 20px;
+  scroll-snap-align: start; background: color-mix(in srgb, var(--md-sys-color-surface, #000) 25%, transparent);
+}
+.slot .when { font-size: 12px; font-weight: 500; opacity: 0.75; }
+.slot ha-icon { --mdc-icon-size: 24px; color: var(--m3-slot, inherit); }
+.slot .t { font-size: 14px; font-weight: 600; }
+.slot .rain { font-size: 11px; font-weight: 500; color: var(--md-sys-color-primary, #4fc3f7); min-height: 13px; }
+`;
+
+// Icône et couleur de chaque condition ; la nuit, les icônes « soleil » passent en version lune.
+const WEATHER = {
+  'clear-night': ['mdi:weather-night', '#7e8cff'],
+  cloudy: ['mdi:weather-cloudy', '#90a4ae'],
+  exceptional: ['mdi:alert-circle-outline', '#ff7043'],
+  fog: ['mdi:weather-fog', '#b0bec5'],
+  hail: ['mdi:weather-hail', '#80deea'],
+  lightning: ['mdi:weather-lightning', '#b388ff'],
+  'lightning-rainy': ['mdi:weather-lightning-rainy', '#b388ff'],
+  partlycloudy: ['mdi:weather-partly-cloudy', '#ffca28'],
+  pouring: ['mdi:weather-pouring', '#4fc3f7'],
+  rainy: ['mdi:weather-rainy', '#4fc3f7'],
+  snowy: ['mdi:weather-snowy', '#e1f5fe'],
+  'snowy-rainy': ['mdi:weather-snowy-rainy', '#b3e5fc'],
+  sunny: ['mdi:weather-sunny', '#ffb300'],
+  windy: ['mdi:weather-windy', '#a5d6a7'],
+  'windy-variant': ['mdi:weather-windy-variant', '#a5d6a7'],
+};
+const NIGHT_ICONS = { sunny: 'mdi:weather-night', partlycloudy: 'mdi:weather-night-partly-cloudy' };
+
+class M3WeatherCardEditor extends M3CardEditor {
+  static schema = [
+    { name: 'entity', required: true, selector: { entity: { domain: 'weather' } } },
+    {
+      type: 'grid', name: '', schema: [
+        { name: 'name', selector: { text: {} } },
+        {
+          name: 'forecast_type', selector: {
+            select: { mode: 'dropdown', options: [
+              { value: 'hourly', label: 'Heure par heure' }, { value: 'daily', label: 'Jour par jour' }, { value: 'none', label: 'Aucune' },
+            ] },
+          },
+        },
+        { name: 'forecast_slots', selector: { number: { min: 3, max: 24, step: 1, mode: 'box' } } },
+      ],
+    },
+  ];
+
+  static labels = { entity: 'Météo', name: 'Nom', forecast_type: 'Prévisions', forecast_slots: 'Nombre de prévisions' };
+}
+
+class M3WeatherCard extends HTMLElement {
+  static async getConfigElement() {
+    await ensureHaForm();
+    return document.createElement('m3-weather-card-editor');
+  }
+
+  static getStubConfig(hass) {
+    return { entity: Object.keys(hass.states).find((e) => e.startsWith('weather.')) ?? 'weather.home' };
+  }
+
+  setConfig(config) {
+    if (!config || !config.entity) throw new Error('m3-weather-card : « entity » est obligatoire');
+    this._config = { forecast_type: 'hourly', forecast_slots: 8, ...config };
+    this.toggleAttribute('no-forecast', this._config.forecast_type === 'none');
+    if (!this.shadowRoot) this._build();
+    this._forecast = null;
+    this._resubscribe();
+    if (this._hass) this._render();
+  }
+
+  getCardSize() { return 4; }
+
+  getGridOptions() { return { columns: 12, rows: 'auto', min_columns: 6 }; }
+
+  connectedCallback() { this._resubscribe(); }
+
+  disconnectedCallback() { this._unsubscribe(); }
+
+  set hass(hass) {
+    const first = !this._hass;
+    this._hass = hass;
+    if (first) this._resubscribe();
+    const s = hass.states[this._config.entity];
+    if (s === this._stateObj && !first) return;
+    this._stateObj = s;
+    this._render();
+  }
+
+  _build() {
+    const root = this.attachShadow({ mode: 'open' });
+    root.innerHTML = `<style>${STYLE}</style>
+      <ha-card>
+        <div class="now">
+          <div class="icon"><ha-icon></ha-icon></div>
+          <div class="text"><div class="condition"></div><div class="details"></div></div>
+          <div class="temp"></div>
+        </div>
+        <div class="forecast"></div>
+      </ha-card>`;
+    const q = (s) => root.querySelector(s);
+    this._card = q('ha-card');
+    this._els = { icon: q('.now ha-icon'), condition: q('.condition'), details: q('.details'), temp: q('.temp'), forecast: q('.forecast') };
+    this._card.addEventListener('click', () => this._fire('hass-more-info', { entityId: this._config.entity }));
+  }
+
+  // Prévisions par abonnement : Home Assistant renvoie la liste à chaque mise à jour.
+  _resubscribe() {
+    this._unsubscribe();
+    const c = this._config;
+    if (!this._hass?.connection || !c || !this.isConnected || c.forecast_type === 'none') return;
+    this._unsub = this._hass.connection.subscribeMessage(
+      (msg) => {
+        this._forecast = msg.forecast ?? [];
+        this._render();
+      },
+      { type: 'weather/subscribe_forecast', forecast_type: c.forecast_type, entity_id: c.entity },
+    ).catch(() => null);
+  }
+
+  _unsubscribe() {
+    this._unsub?.then((fn) => fn?.()).catch(() => {});
+    this._unsub = null;
+  }
+
+  _isNight(date = new Date()) {
+    const sun = this._hass.states['sun.sun'];
+    if (!sun) return date.getHours() < 7 || date.getHours() >= 20;
+    if (date - Date.now() < 60 * 1000) return sun.state === 'below_horizon';
+    // Heure à venir : comparée au prochain coucher et au prochain lever du soleil.
+    const rising = Date.parse(sun.attributes.next_rising), setting = Date.parse(sun.attributes.next_setting), t = date.getTime();
+    return setting < rising ? t >= setting && t < rising : t < rising || t >= setting;
+  }
+
+  // `date` : undefined = maintenant, null = journée entière (jamais la nuit).
+  _icon(condition, date) {
+    const night = date === null ? false : this._isNight(date ?? new Date());
+    return (night && NIGHT_ICONS[condition]) || WEATHER[condition]?.[0] || 'mdi:weather-cloudy';
+  }
+
+  _num(v, unit = '') {
+    if (v == null || isNaN(v)) return '—';
+    const n = new Intl.NumberFormat(this._hass.locale?.language ?? 'fr', { maximumFractionDigits: 0 }).format(v);
+    return `${n}${unit}`;
+  }
+
+  _render() {
+    if (!this._els || !this._hass) return;
+    const s = this._stateObj;
+    const e = this._els;
+    if (!s) {
+      e.condition.textContent = 'Météo introuvable';
+      return;
+    }
+    const a = s.attributes;
+    const condition = s.state;
+    const night = this._isNight();
+    this._card.style.setProperty('--m3-weather', night && NIGHT_ICONS[condition] ? WEATHER['clear-night'][1] : WEATHER[condition]?.[1] ?? '#90a4ae');
+    e.icon.icon = this._icon(condition);
+    e.condition.textContent = this._config.name ?? this._hass.formatEntityState?.(s) ?? condition;
+    e.temp.textContent = this._num(a.temperature, '°');
+    const details = [];
+    if (a.apparent_temperature != null && Math.round(a.apparent_temperature) !== Math.round(a.temperature)) {
+      details.push(`Ressenti ${this._num(a.apparent_temperature, '°')}`);
+    }
+    if (a.humidity != null) details.push(`${this._num(a.humidity)} %`);
+    if (a.wind_speed != null) details.push(`${this._num(a.wind_speed)} ${a.wind_speed_unit ?? 'km/h'}`);
+    e.details.textContent = this._config.name ? [this._hass.formatEntityState?.(s), ...details].filter(Boolean).join(' • ') : details.join(' • ');
+
+    const daily = this._config.forecast_type === 'daily';
+    const slots = (this._forecast ?? [])
+      .filter((f) => Date.parse(f.datetime) > Date.now() - (daily ? 12 : 1) * 3600 * 1000)
+      .slice(0, this._config.forecast_slots);
+    const lang = this._hass.locale?.language ?? 'fr';
+    e.forecast.replaceChildren(...slots.map((f) => {
+      const date = new Date(f.datetime);
+      const slot = document.createElement('div');
+      slot.className = 'slot';
+      const when = document.createElement('span');
+      when.className = 'when';
+      when.textContent = daily
+        ? date.toLocaleDateString(lang, { weekday: 'short' }).replace('.', '')
+        : `${date.getHours()} h`;
+      const icon = document.createElement('ha-icon');
+      icon.icon = this._icon(f.condition, daily ? null : date);
+      icon.style.setProperty('--m3-slot', WEATHER[f.condition]?.[1] ?? 'inherit');
+      const t = document.createElement('span');
+      t.className = 't';
+      t.textContent = daily && f.templow != null ? `${this._num(f.temperature, '°')} / ${this._num(f.templow, '°')}` : this._num(f.temperature, '°');
+      const rain = document.createElement('span');
+      rain.className = 'rain';
+      rain.textContent = f.precipitation_probability ? `${this._num(f.precipitation_probability)} %` : f.precipitation ? `${f.precipitation} mm` : '';
+      slot.append(when, icon, t, rain);
+      return slot;
+    }));
+  }
+
+  _fire(type, detail) {
+    this.dispatchEvent(new CustomEvent(type, { detail, bubbles: true, composed: true }));
+  }
+}
+
+defineEditor('m3-weather-card-editor', M3WeatherCardEditor);
+
+if (!customElements.get('m3-weather-card')) {
+  customElements.define('m3-weather-card', M3WeatherCard);
+  window.customCards = window.customCards || [];
+  window.customCards.push({
+    type: 'm3-weather-card',
+    name: 'M3 Weather',
+    description: 'Météo Material 3 : conditions actuelles teintées selon le temps et prévisions heure par heure ou jour par jour',
     preview: true,
   });
 }
