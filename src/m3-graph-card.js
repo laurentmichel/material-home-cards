@@ -12,13 +12,10 @@ ha-card {
 svg {
   position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: var(--m3-graph-height, 60%);
   pointer-events: none;
-  /* Le haut de la courbe s'estompe : elle reste lisible en bas sans gêner le texte au-dessus. */
-  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.25) 25%, #000 65%);
-  mask-image: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.25) 25%, #000 65%);
 }
 .area { fill: var(--m3-graph-fill); transition: fill 300ms ease; }
 .line {
-  fill: none; stroke: var(--m3-graph-line); stroke-width: 1.25; vector-effect: non-scaling-stroke;
+  fill: none; stroke: var(--m3-graph-line); stroke-width: 0.75; vector-effect: non-scaling-stroke;
   stroke-linejoin: round; stroke-linecap: round; transition: stroke 300ms ease;
 }
 .content {

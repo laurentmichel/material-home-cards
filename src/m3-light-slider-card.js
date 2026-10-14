@@ -30,6 +30,7 @@ ha-card {
 const SURFACE = 'var(--md-sys-color-surface-container-high, var(--ha-card-background, var(--card-background-color)))';
 const ON_SURFACE = 'var(--md-sys-color-on-surface, var(--primary-text-color))';
 const SEND_INTERVAL = 300;
+const PASTEL = 0.45;
 const PENDING_TTL = 5000;
 
 class M3LightSliderCardEditor extends M3CardEditor {
@@ -133,7 +134,8 @@ class M3LightSliderCard extends HTMLElement {
 
     const st = this._card.style;
     if (on) {
-      const [r, g, b] = a.rgb_color ?? [255, 183, 77];
+      // Ton pastel : la couleur de la lumière mélangée à 45 % de blanc.
+      const [r, g, b] = (a.rgb_color ?? [255, 183, 77]).map((c) => Math.round(c + (255 - c) * PASTEL));
       const lightFill = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255 > 0.55;
       const overFill = pct >= 45;
       st.setProperty('--m3-fill', `rgb(${r}, ${g}, ${b})`);

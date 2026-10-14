@@ -1,5 +1,5 @@
-/*! Material Home Cards v1.4.0 — https://github.com/laurentmichel/material-home-cards */
-console.info('%c MATERIAL-HOME-CARDS %c v1.4.0 ', 'color:#fff;background:#6750a4;font-weight:700', 'color:#6750a4;background:#eaddff');
+/*! Material Home Cards v1.4.1 — https://github.com/laurentmichel/material-home-cards */
+console.info('%c MATERIAL-HOME-CARDS %c v1.4.1 ', 'color:#fff;background:#6750a4;font-weight:700', 'color:#6750a4;background:#eaddff');
 
 // ---- shared/editor.js ----
 // Éditeur visuel commun : un <ha-form> natif de Home Assistant décrit par un schéma de sélecteurs.
@@ -75,13 +75,10 @@ ha-card {
 svg {
   position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: var(--m3-graph-height, 60%);
   pointer-events: none;
-  /* Le haut de la courbe s'estompe : elle reste lisible en bas sans gêner le texte au-dessus. */
-  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.25) 25%, #000 65%);
-  mask-image: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.25) 25%, #000 65%);
 }
 .area { fill: var(--m3-graph-fill); transition: fill 300ms ease; }
 .line {
-  fill: none; stroke: var(--m3-graph-line); stroke-width: 1.25; vector-effect: non-scaling-stroke;
+  fill: none; stroke: var(--m3-graph-line); stroke-width: 0.75; vector-effect: non-scaling-stroke;
   stroke-linejoin: round; stroke-linecap: round; transition: stroke 300ms ease;
 }
 .content {
@@ -390,6 +387,7 @@ ha-card {
 const SURFACE = 'var(--md-sys-color-surface-container-high, var(--ha-card-background, var(--card-background-color)))';
 const ON_SURFACE = 'var(--md-sys-color-on-surface, var(--primary-text-color))';
 const SEND_INTERVAL = 300;
+const PASTEL = 0.45;
 const PENDING_TTL = 5000;
 
 class M3LightSliderCardEditor extends M3CardEditor {
@@ -493,7 +491,8 @@ class M3LightSliderCard extends HTMLElement {
 
     const st = this._card.style;
     if (on) {
-      const [r, g, b] = a.rgb_color ?? [255, 183, 77];
+      // Ton pastel : la couleur de la lumière mélangée à 45 % de blanc.
+      const [r, g, b] = (a.rgb_color ?? [255, 183, 77]).map((c) => Math.round(c + (255 - c) * PASTEL));
       const lightFill = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255 > 0.55;
       const overFill = pct >= 45;
       st.setProperty('--m3-fill', `rgb(${r}, ${g}, ${b})`);
