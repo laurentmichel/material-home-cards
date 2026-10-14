@@ -7,7 +7,7 @@ const listJs = (dir) => readdirSync(dir).filter((f) => f.endsWith('.js')).sort()
 
 // En dev, chaque élément prend le suffixe -dev pour cohabiter avec la version installée par HACS.
 const toDev = (code) => code
-  .replace(/'(m3-[a-z-]+?-card(?:-editor)?)'/g, "'$1-dev'")
+  .replace(/'(m3-(?:[a-z-]+?-card|badge)(?:-editor)?)'/g, "'$1-dev'")
   .replace(/name: '(M3 [^']+)'/g, "name: '$1 (dev)'");
 
 export function bundle({ dev = false } = {}) {

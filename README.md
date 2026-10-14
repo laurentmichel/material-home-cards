@@ -12,6 +12,7 @@ et retombent sur les couleurs Home Assistant sinon.
 | Capteur avec courbe d'historique | `custom:m3-graph-card` |
 | Bouton pour n'importe quelle entité | `custom:m3-button-card` |
 | Popup ouverte par un `#hash` | `custom:m3-popup-card` |
+| Badge pour le haut des vues | `custom:m3-badge` |
 
 ## Installation (HACS)
 
@@ -95,7 +96,8 @@ l'entité est active (allumée, ouverte, en lecture, en chauffe…) et affiche u
 | Aspirateur | Démarrer / retour à la base |
 | Autres (capteurs, thermostat…) | Fenêtre de détails |
 
-L'appui long ouvre la fenêtre de détails. Les deux se remplacent par n'importe quelle action Home Assistant.
+L'appui long ouvre la fenêtre de détails. Les deux se remplacent par n'importe quelle action Home Assistant,
+et un double appui peut en déclencher une troisième.
 
 ```yaml
 type: custom:m3-button-card
@@ -112,6 +114,8 @@ tap_action:             # facultatif, sinon l'action par défaut ci-dessus
   navigation_path: /lovelace/bureau
 hold_action:            # facultatif, sinon la fenêtre de détails
   action: more-info
+double_tap_action:      # facultatif, désactivé par défaut (l'appui simple attend alors 250 ms)
+  action: toggle
 ```
 
 ## `m3-popup-card`
@@ -158,17 +162,52 @@ style:
 
 L'éditeur visuel règle le hash, l'en-tête, le comportement et l'apparence ; la liste `cards` se modifie en YAML.
 
+## `m3-badge`
+
+Badge à placer en haut d'une vue (Modifier → Badges), au style « chip » de Material 3 : icône et valeur
+sur un fond teinté de la couleur du badge. Sans couleur, il prend celle de l'état, comme les badges natifs.
+`content`, `icon`, `color` et `label` acceptent un template, mis à jour en direct.
+
+```yaml
+type: custom:m3-badge
+entity: climate.maison
+attribute: current_temperature   # facultatif, affiche un attribut au lieu de l'état
+color: amber                     # facultatif : couleur HA (amber, blue…), hex ou rgb
+icon: mdi:thermometer            # facultatif
+variant: chip                    # facultatif : chip (défaut), pill ou two-line
+label: Chauffage                 # facultatif, deuxième ligne du style two-line
+tap_action:                      # facultatif, sinon la fenêtre de détails
+  action: navigate
+  navigation_path: /dashboard-maison/chauffage
+```
+
+Avec un template, par exemple le temps restant d'un lave-linge :
+
+```yaml
+type: custom:m3-badge
+entity: sensor.lave_linge_machine_state
+content: >
+  {% set t = (states('sensor.lave_linge_completion_time') | as_datetime - now()).total_seconds() %}
+  {{ t | timestamp_custom('%-H h %-M' if t > 3600 else '%-M min', false) }}
+icon: mdi:washing-machine
+color: blue
+visibility:
+  - condition: state
+    entity: sensor.lave_linge_machine_state
+    state: run
+```
+
 ## Développement
 
 ### Tester sans publier
 
 `npm run dev` lance un petit serveur local (sans dépendance) qui sert une version de dev des cartes
-et **recharge automatiquement la page Home Assistant** à chaque sauvegarde dans `src/`.
+et **recharge automatiquement la page Home Assistant** à chaque sauvegarde dans `src/` (ou dans `build.mjs`).
 
 1. `npm run dev` : l'adresse à utiliser s'affiche, par exemple `http://192.168.1.20:5000/material-home-cards-dev.js`
 2. Paramètres → Tableaux de bord → ⋮ → Ressources → ajouter cette adresse en **module JavaScript** (une seule fois)
 3. Dans un tableau de bord de test, utiliser les types `-dev` :
-   `custom:m3-thermostat-card-dev`, `custom:m3-light-slider-card-dev`, `custom:m3-graph-card-dev` et `custom:m3-button-card-dev`
+   `custom:m3-thermostat-card-dev`, `custom:m3-light-slider-card-dev`, `custom:m3-graph-card-dev`, `custom:m3-button-card-dev`, `custom:m3-popup-card-dev` et `custom:m3-badge-dev`
 
 Les types `-dev` cohabitent avec la version installée par HACS, qui reste intacte. Le port se change avec
 `PORT=5001 npm run dev`. Si Home Assistant est ouvert en **https**, le navigateur bloque une ressource en http :

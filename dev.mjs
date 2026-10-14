@@ -3,7 +3,6 @@
 import { createServer } from 'node:http';
 import { watch } from 'node:fs';
 import { networkInterfaces } from 'node:os';
-import { bundle } from './build.mjs';
 
 const PORT = Number(process.env.PORT ?? 5000);
 const clients = new Set();
@@ -18,9 +17,14 @@ const LIVE_RELOAD = `
 
 let current;
 let buildError;
-const rebuild = () => {
+let cards = [];
+// build.mjs est réimporté à chaque fois : une modification du script de build est prise en compte sans redémarrer.
+const rebuild = async () => {
   try {
-    current = bundle({ dev: true }).code + LIVE_RELOAD;
+    const { bundle } = await import(`./build.mjs?t=${Date.now()}`);
+    const result = bundle({ dev: true });
+    current = result.code + LIVE_RELOAD;
+    cards = result.cards;
     buildError = null;
     return true;
   } catch (err) {
@@ -29,7 +33,7 @@ const rebuild = () => {
     return false;
   }
 };
-rebuild();
+await rebuild();
 
 const server = createServer((req, res) => {
   const headers = { 'Access-Control-Allow-Origin': '*', 'Cache-Control': 'no-store' };
@@ -51,14 +55,16 @@ const server = createServer((req, res) => {
 
 // Plusieurs événements arrivent pour une même sauvegarde : on regroupe sur 150 ms.
 let timer;
-watch('src', { recursive: true }, (_event, file) => {
+const onChange = (file) => {
   clearTimeout(timer);
-  timer = setTimeout(() => {
-    if (!rebuild()) return;
+  timer = setTimeout(async () => {
+    if (!(await rebuild())) return;
     console.log(`↻ ${file} — ${clients.size} page(s) rechargée(s)`);
     for (const client of clients) client.write('event: reload\ndata: \n\n');
   }, 150);
-});
+};
+watch('src', { recursive: true }, (_event, file) => onChange(file));
+watch('build.mjs', () => onChange('build.mjs'));
 
 server.listen(PORT, () => {
   // Les interfaces Docker / bridges virtuels ne sont pas joignables depuis le réseau local.
@@ -69,7 +75,7 @@ server.listen(PORT, () => {
     .map((i) => i.address);
   console.log('Material Home Cards — serveur de dev');
   for (const ip of ips) console.log(`  Ressource Lovelace (module) : http://${ip}:${PORT}/material-home-cards-dev.js`);
-  const types = bundle({ dev: true }).cards.map((f) => `custom:${f.replace(/\.js$/, '')}-dev`);
+  const types = cards.map((f) => `custom:${f.replace(/\.js$/, '')}-dev`);
   console.log(`  Types de cartes : ${types.join(', ')}`);
-  console.log('  En attente de modifications dans src/ …');
+  console.log('  En attente de modifications dans src/ et build.mjs …');
 });

@@ -7,7 +7,7 @@ ha-card {
   border-radius: 28px; border: none; box-shadow: none;
   background: var(--m3-bg); color: var(--m3-fg);
   display: flex; align-items: center; gap: 14px; padding: 0 20px;
-  cursor: pointer; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent;
+  cursor: pointer; touch-action: manipulation; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent;
   transition: background 300ms ease, color 300ms ease, transform 120ms ease;
 }
 ha-card:active { transform: scale(0.98); }
@@ -25,6 +25,8 @@ ha-card:active { transform: scale(0.98); }
 const SURFACE = 'var(--md-sys-color-surface-container-high, var(--ha-card-background, var(--card-background-color)))';
 const ON_SURFACE = 'var(--md-sys-color-on-surface, var(--primary-text-color))';
 const HOLD_MS = 500;
+// Délai pour attendre un second appui, seulement si un double appui est configuré.
+const DOUBLE_TAP_MS = 250;
 
 // États considérés comme « actifs » : la carte prend alors la teinte primary-container.
 const ACTIVE_STATES = new Set([
@@ -81,6 +83,7 @@ class M3ButtonCardEditor extends M3CardEditor {
       type: 'expandable', name: '', title: 'Actions', icon: 'mdi:gesture-tap', schema: [
         { name: 'tap_action', selector: { ui_action: {} } },
         { name: 'hold_action', selector: { ui_action: {} } },
+        { name: 'double_tap_action', selector: { ui_action: {} } },
       ],
     },
   ];
@@ -88,12 +91,13 @@ class M3ButtonCardEditor extends M3CardEditor {
   static labels = {
     entity: 'Entité', name: 'Nom', icon: 'Icône', icon_on: 'Icône allumé', icon_off: 'Icône éteint',
     text_on: 'Texte allumé', text_off: 'Texte éteint', show_state: 'Afficher l’état',
-    tap_action: 'Appui', hold_action: 'Appui long',
+    tap_action: 'Appui', hold_action: 'Appui long', double_tap_action: 'Double appui',
   };
 
   static helpers = {
     tap_action: 'Vide : action adaptée à l’entité (allumer, lancer la scène, appuyer…)',
     hold_action: 'Vide : fenêtre de détails',
+    double_tap_action: 'Vide : désactivé, l’appui simple reste instantané',
   };
 }
 
@@ -208,8 +212,24 @@ class M3ButtonCard extends HTMLElement {
 
   _onUp() {
     clearTimeout(this._holdTimer);
-    if (this._down && !this._held) this._run('tap');
+    if (this._down && !this._held) this._tap();
     this._down = false;
+  }
+
+  // Sans double appui configuré, l'appui part tout de suite ; sinon on attend un éventuel second appui.
+  _tap() {
+    if (!this._config.double_tap_action) {
+      this._run('tap');
+    } else if (this._tapTimer) {
+      clearTimeout(this._tapTimer);
+      this._tapTimer = null;
+      this._run('double_tap');
+    } else {
+      this._tapTimer = setTimeout(() => {
+        this._tapTimer = null;
+        this._run('tap');
+      }, DOUBLE_TAP_MS);
+    }
   }
 
   // Glissement hors de la carte ou défilement : ni appui ni appui long.
