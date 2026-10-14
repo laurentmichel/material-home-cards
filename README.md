@@ -14,6 +14,7 @@ et retombent sur les couleurs Home Assistant sinon.
 | Sélecteur de scènes | `custom:m3-scene-card` |
 | Lecteur multimédia | `custom:m3-media-card` |
 | Accueil « Bonjour » avec les personnes | `custom:m3-person-card` |
+| Carte d'un robot (tondeuse Dreame…) | `custom:m3-map-card` |
 | Bouton pour n'importe quelle entité | `custom:m3-button-card` |
 | Popup ouverte par un `#hash` | `custom:m3-popup-card` |
 | Pièce : température, humidité, lumière et chauffage | `custom:m3-room-card` |
@@ -211,6 +212,22 @@ show_dot: true           # facultatif, pastille « à la maison » (défaut true
 background: false        # facultatif, fond de carte (défaut false)
 ```
 
+## `m3-map-card`
+
+Carte d'un robot redessinée aux couleurs Material 3. Quand la caméra « carte » fournit un SVG (c'est le cas de
+l'intégration Dreame Mower), la carte retire le fond, le titre et la légende, recolore la pelouse, le tracé de
+tonte, les obstacles et la position du robot, puis recadre sur le terrain. Une autre image s'affiche telle quelle,
+avec des coins arrondis. Une pastille peut afficher l'état du robot et sa batterie.
+
+```yaml
+type: custom:m3-map-card
+entity: camera.a2_1200_carte
+mower: lawn_mower.a2_1200        # facultatif, état dans la pastille
+battery: sensor.a2_1200_batterie # facultatif
+lawn_color: '#6abf69'            # facultatif
+height: 360                      # facultatif, hauteur maximale en px
+```
+
 ## `m3-popup-card`
 
 Popup qui s'ouvre quand l'URL contient son `#hash` : un panneau qui glisse depuis le bas sur mobile, une
@@ -355,7 +372,7 @@ et **recharge automatiquement la page Home Assistant** à chaque sauvegarde dans
 1. `npm run dev` : l'adresse à utiliser s'affiche, par exemple `http://192.168.1.20:5000/material-home-cards-dev.js`
 2. Paramètres → Tableaux de bord → ⋮ → Ressources → ajouter cette adresse en **module JavaScript** (une seule fois)
 3. Dans un tableau de bord de test, utiliser les types `-dev` :
-   `custom:m3-thermostat-card-dev`, `custom:m3-light-slider-card-dev`, `custom:m3-graph-card-dev`, `custom:m3-button-card-dev`, `custom:m3-popup-card-dev`, `custom:m3-room-card-dev`, `custom:m3-list-card-dev`, `custom:m3-scene-card-dev`, `custom:m3-multi-graph-card-dev`, `custom:m3-media-card-dev`, `custom:m3-person-card-dev` et `custom:m3-badge-dev`
+   `custom:m3-thermostat-card-dev`, `custom:m3-light-slider-card-dev`, `custom:m3-graph-card-dev`, `custom:m3-button-card-dev`, `custom:m3-popup-card-dev`, `custom:m3-room-card-dev`, `custom:m3-list-card-dev`, `custom:m3-scene-card-dev`, `custom:m3-multi-graph-card-dev`, `custom:m3-media-card-dev`, `custom:m3-person-card-dev`, `custom:m3-map-card-dev` et `custom:m3-badge-dev`
 
 Les types `-dev` cohabitent avec la version installée par HACS, qui reste intacte. Le port se change avec
 `PORT=5001 npm run dev`. Si Home Assistant est ouvert en **https**, le navigateur bloque une ressource en http :
