@@ -40,7 +40,7 @@ button:focus-visible { outline: 2px solid var(--m3-primary); outline-offset: 2px
   font-size: 4.5rem; font-weight: 400; line-height: 1.1; letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums; text-align: center;
 }
-.status { text-align: center; font-size: 0.875rem; opacity: 0.85; }
+.status { text-align: center; font-size: 1rem; opacity: 0.85; }
 :host([no-target]) .step { visibility: hidden; }
 :host([off]) .target { opacity: 0.6; }
 :host([unavailable]) ha-card { opacity: 0.5; pointer-events: none; }

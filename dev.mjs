@@ -69,6 +69,6 @@ server.listen(PORT, () => {
     .map((i) => i.address);
   console.log('Material Home Cards — serveur de dev');
   for (const ip of ips) console.log(`  Ressource Lovelace (module) : http://${ip}:${PORT}/material-home-cards-dev.js`);
-  console.log('  Types de cartes : custom:m3-thermostat-card-dev, custom:m3-light-slider-card-dev');
+  console.log('  Types de cartes : custom:m3-thermostat-card-dev, custom:m3-light-slider-card-dev, custom:m3-graph-card-dev');
   console.log('  En attente de modifications dans src/ …');
 });
