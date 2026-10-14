@@ -1,5 +1,63 @@
-/*! Material Home Cards v1.2.0 — https://github.com/laurentmichel/material-home-cards */
-console.info('%c MATERIAL-HOME-CARDS %c v1.2.0 ', 'color:#fff;background:#6750a4;font-weight:700', 'color:#6750a4;background:#eaddff');
+/*! Material Home Cards v1.3.0 — https://github.com/laurentmichel/material-home-cards */
+console.info('%c MATERIAL-HOME-CARDS %c v1.3.0 ', 'color:#fff;background:#6750a4;font-weight:700', 'color:#6750a4;background:#eaddff');
+
+// ---- shared/editor.js ----
+// Éditeur visuel commun : un <ha-form> natif de Home Assistant décrit par un schéma de sélecteurs.
+// Chaque carte déclare une sous-classe avec `schema` et `labels`, et la renvoie via getConfigElement().
+
+// ha-form est chargé à la demande par HA : on force son chargement via l'éditeur d'une carte native.
+async function ensureHaForm() {
+  if (customElements.get('ha-form')) return;
+  const helpers = await window.loadCardHelpers?.();
+  const card = await helpers?.createCardElement({ type: 'entities', entities: [] });
+  await card?.constructor?.getConfigElement?.();
+  await customElements.whenDefined('ha-form');
+}
+
+class M3CardEditor extends HTMLElement {
+  static schema = [];
+  static labels = {};
+  static helpers = {};
+
+  setConfig(config) {
+    this._config = config;
+    this._render();
+  }
+
+  set hass(hass) {
+    this._hass = hass;
+    this._render();
+  }
+
+  _render() {
+    if (!this._config || !this._hass) return;
+    if (!this._form) {
+      const { labels, helpers } = this.constructor;
+      this._form = document.createElement('ha-form');
+      this._form.computeLabel = (s) => labels[s.name] ?? s.name;
+      this._form.computeHelper = (s) => helpers[s.name];
+      this._form.addEventListener('value-changed', (e) => this._changed(e.detail.value));
+      this.appendChild(this._form);
+    }
+    this._form.hass = this._hass;
+    this._form.data = this._config;
+    this._form.schema = this.constructor.schema;
+  }
+
+  // Les champs vidés sont retirés du YAML plutôt qu'enregistrés comme chaînes vides.
+  _changed(value) {
+    const config = { ...value };
+    for (const key of Object.keys(config)) {
+      if (config[key] === '' || config[key] == null) delete config[key];
+    }
+    this._config = config;
+    this.dispatchEvent(new CustomEvent('config-changed', { detail: { config }, bubbles: true, composed: true }));
+  }
+}
+
+const defineEditor = (tag, editorClass) => {
+  if (!customElements.get(tag)) customElements.define(tag, editorClass);
+};
 
 // ---- m3-light-slider-card.js ----
 {
@@ -41,7 +99,27 @@ const ON_SURFACE = 'var(--md-sys-color-on-surface, var(--primary-text-color))';
 const SEND_INTERVAL = 300;
 const PENDING_TTL = 5000;
 
+class M3LightSliderCardEditor extends M3CardEditor {
+  static schema = [
+    { name: 'entity', required: true, selector: { entity: { filter: { domain: 'light' } } } },
+    {
+      type: 'grid', name: '', schema: [
+        { name: 'name', selector: { text: {} } },
+        { name: 'icon', selector: { icon: {} }, context: { icon_entity: 'entity' } },
+      ],
+    },
+  ];
+
+  static labels = { entity: 'Entité', name: 'Nom', icon: 'Icône' };
+}
+
 class M3LightSliderCard extends HTMLElement {
+  static async getConfigElement() {
+    await ensureHaForm();
+    return document.createElement('m3-light-slider-card-editor');
+  }
+
+
   setConfig(config) {
     if (!config || !config.entity || !config.entity.startsWith('light.')) {
       throw new Error('m3-light-slider-card : « entity » doit être une entité light.*');
@@ -219,6 +297,8 @@ class M3LightSliderCard extends HTMLElement {
   }
 }
 
+defineEditor('m3-light-slider-card-editor', M3LightSliderCardEditor);
+
 if (!customElements.get('m3-light-slider-card')) {
   customElements.define('m3-light-slider-card', M3LightSliderCard);
   window.customCards = window.customCards || [];
@@ -226,6 +306,7 @@ if (!customElements.get('m3-light-slider-card')) {
     type: 'm3-light-slider-card',
     name: 'M3 Light Slider',
     description: 'Slider de luminosité Material 3 teinté avec la couleur de la lumière',
+    preview: true,
   });
 }
 }
@@ -290,7 +371,7 @@ const PENDING_TTL = 8000;
 const MODES = {
   heat: { label: 'Chauffage', icon: 'mdi:fire' },
   cool: { label: 'Climatisation', icon: 'mdi:snowflake' },
-  heat_cool: { label: 'Auto', icon: 'mdi:sun-snowflake-variant' },
+  heat_cool: { label: 'Chaud / froid', icon: 'mdi:sun-snowflake-variant' },
   auto: { label: 'Auto', icon: 'mdi:thermostat-auto' },
   dry: { label: 'Déshumidification', icon: 'mdi:water-percent' },
   fan_only: { label: 'Ventilation', icon: 'mdi:fan' },
@@ -299,7 +380,47 @@ const MODES = {
 
 const fmt = (n) => Number(n).toLocaleString('fr-FR', { maximumFractionDigits: 1 });
 
+class M3ThermostatCardEditor extends M3CardEditor {
+  static schema = [
+    { name: 'entity', required: true, selector: { entity: { filter: { domain: 'climate' } } } },
+    {
+      type: 'grid', name: '', schema: [
+        { name: 'name', selector: { text: {} } },
+        { name: 'icon', selector: { icon: {} }, context: { icon_entity: 'entity' } },
+        { name: 'step', selector: { number: { min: 0.1, max: 5, step: 0.1, mode: 'box', unit_of_measurement: '°' } } },
+        {
+          name: 'hvac_mode',
+          selector: {
+            select: {
+              mode: 'dropdown',
+              options: Object.entries(MODES)
+                .filter(([mode]) => mode !== 'off')
+                .map(([value, { label }]) => ({ value, label })),
+            },
+          },
+        },
+      ],
+    },
+  ];
+
+  static labels = {
+    entity: 'Entité', name: 'Nom', icon: 'Icône',
+    step: 'Pas des boutons − / +', hvac_mode: 'Mode au démarrage',
+  };
+
+  static helpers = {
+    icon: 'Laisser vide pour que l’icône suive le mode',
+    hvac_mode: 'Mode activé par le bouton Marche (par défaut : chauffage)',
+  };
+}
+
 class M3ThermostatCard extends HTMLElement {
+  static async getConfigElement() {
+    await ensureHaForm();
+    return document.createElement('m3-thermostat-card-editor');
+  }
+
+
   setConfig(config) {
     if (!config || !config.entity || !config.entity.startsWith('climate.')) {
       throw new Error('m3-thermostat-card : « entity » doit être une entité climate.*');
@@ -430,6 +551,8 @@ class M3ThermostatCard extends HTMLElement {
   }
 }
 
+defineEditor('m3-thermostat-card-editor', M3ThermostatCardEditor);
+
 if (!customElements.get('m3-thermostat-card')) {
   customElements.define('m3-thermostat-card', M3ThermostatCard);
   window.customCards = window.customCards || [];
@@ -437,6 +560,7 @@ if (!customElements.get('m3-thermostat-card')) {
     type: 'm3-thermostat-card',
     name: 'M3 Thermostat',
     description: 'Thermostat Material 3 avec consigne réglable et affichage immédiat',
+    preview: true,
   });
 }
 }

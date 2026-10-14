@@ -36,7 +36,27 @@ const ON_SURFACE = 'var(--md-sys-color-on-surface, var(--primary-text-color))';
 const SEND_INTERVAL = 300;
 const PENDING_TTL = 5000;
 
+class M3LightSliderCardEditor extends M3CardEditor {
+  static schema = [
+    { name: 'entity', required: true, selector: { entity: { filter: { domain: 'light' } } } },
+    {
+      type: 'grid', name: '', schema: [
+        { name: 'name', selector: { text: {} } },
+        { name: 'icon', selector: { icon: {} }, context: { icon_entity: 'entity' } },
+      ],
+    },
+  ];
+
+  static labels = { entity: 'Entité', name: 'Nom', icon: 'Icône' };
+}
+
 class M3LightSliderCard extends HTMLElement {
+  static async getConfigElement() {
+    await ensureHaForm();
+    return document.createElement('m3-light-slider-card-editor');
+  }
+
+
   setConfig(config) {
     if (!config || !config.entity || !config.entity.startsWith('light.')) {
       throw new Error('m3-light-slider-card : « entity » doit être une entité light.*');
@@ -214,6 +234,8 @@ class M3LightSliderCard extends HTMLElement {
   }
 }
 
+defineEditor('m3-light-slider-card-editor', M3LightSliderCardEditor);
+
 if (!customElements.get('m3-light-slider-card')) {
   customElements.define('m3-light-slider-card', M3LightSliderCard);
   window.customCards = window.customCards || [];
@@ -221,5 +243,6 @@ if (!customElements.get('m3-light-slider-card')) {
     type: 'm3-light-slider-card',
     name: 'M3 Light Slider',
     description: 'Slider de luminosité Material 3 teinté avec la couleur de la lumière',
+    preview: true,
   });
 }

@@ -18,6 +18,10 @@ et retombent sur les couleurs Home Assistant sinon.
 
 HACS ajoute lui-même la ressource `/hacsfiles/material-home-cards/material-home-cards.js`.
 
+Les deux cartes ont un **éditeur visuel** (entité, nom, icône, et pour le thermostat le pas et le mode
+de démarrage) : elles apparaissent dans le sélecteur de cartes sous « M3 Light Slider » et « M3 Thermostat ».
+Le YAML ci-dessous reste utilisable.
+
 ## `m3-light-slider-card`
 
 Toute la carte est un slider : glisser horizontalement règle la luminosité, la partie remplie

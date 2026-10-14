@@ -56,7 +56,7 @@ const PENDING_TTL = 8000;
 const MODES = {
   heat: { label: 'Chauffage', icon: 'mdi:fire' },
   cool: { label: 'Climatisation', icon: 'mdi:snowflake' },
-  heat_cool: { label: 'Auto', icon: 'mdi:sun-snowflake-variant' },
+  heat_cool: { label: 'Chaud / froid', icon: 'mdi:sun-snowflake-variant' },
   auto: { label: 'Auto', icon: 'mdi:thermostat-auto' },
   dry: { label: 'Déshumidification', icon: 'mdi:water-percent' },
   fan_only: { label: 'Ventilation', icon: 'mdi:fan' },
@@ -65,7 +65,47 @@ const MODES = {
 
 const fmt = (n) => Number(n).toLocaleString('fr-FR', { maximumFractionDigits: 1 });
 
+class M3ThermostatCardEditor extends M3CardEditor {
+  static schema = [
+    { name: 'entity', required: true, selector: { entity: { filter: { domain: 'climate' } } } },
+    {
+      type: 'grid', name: '', schema: [
+        { name: 'name', selector: { text: {} } },
+        { name: 'icon', selector: { icon: {} }, context: { icon_entity: 'entity' } },
+        { name: 'step', selector: { number: { min: 0.1, max: 5, step: 0.1, mode: 'box', unit_of_measurement: '°' } } },
+        {
+          name: 'hvac_mode',
+          selector: {
+            select: {
+              mode: 'dropdown',
+              options: Object.entries(MODES)
+                .filter(([mode]) => mode !== 'off')
+                .map(([value, { label }]) => ({ value, label })),
+            },
+          },
+        },
+      ],
+    },
+  ];
+
+  static labels = {
+    entity: 'Entité', name: 'Nom', icon: 'Icône',
+    step: 'Pas des boutons − / +', hvac_mode: 'Mode au démarrage',
+  };
+
+  static helpers = {
+    icon: 'Laisser vide pour que l’icône suive le mode',
+    hvac_mode: 'Mode activé par le bouton Marche (par défaut : chauffage)',
+  };
+}
+
 class M3ThermostatCard extends HTMLElement {
+  static async getConfigElement() {
+    await ensureHaForm();
+    return document.createElement('m3-thermostat-card-editor');
+  }
+
+
   setConfig(config) {
     if (!config || !config.entity || !config.entity.startsWith('climate.')) {
       throw new Error('m3-thermostat-card : « entity » doit être une entité climate.*');
@@ -196,6 +236,8 @@ class M3ThermostatCard extends HTMLElement {
   }
 }
 
+defineEditor('m3-thermostat-card-editor', M3ThermostatCardEditor);
+
 if (!customElements.get('m3-thermostat-card')) {
   customElements.define('m3-thermostat-card', M3ThermostatCard);
   window.customCards = window.customCards || [];
@@ -203,5 +245,6 @@ if (!customElements.get('m3-thermostat-card')) {
     type: 'm3-thermostat-card',
     name: 'M3 Thermostat',
     description: 'Thermostat Material 3 avec consigne réglable et affichage immédiat',
+    preview: true,
   });
 }
