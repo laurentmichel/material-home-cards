@@ -1,5 +1,7 @@
 # Material Home Cards
 
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-support-FFDD00?logo=buymeacoffee&logoColor=000)](https://buymeacoffee.com/laurentmichel)
+
 **Material Design 3** Lovelace cards for Home Assistant, with no dependencies.
 They automatically pick up the colors of a Material You theme
 (`--md-sys-color-*` variables, for example [Material You Theme](https://github.com/Nerwyn/material-you-theme))
@@ -426,3 +428,9 @@ it before every release.
 
 To publish a version: bump `version` in `package.json`, run `npm run build`, commit, then create a GitHub release
 `vX.Y.Z` — HACS then offers the update.
+
+## Support
+
+The cards are free and will stay free. If they made your dashboard a little nicer, you can
+[buy me a coffee](https://buymeacoffee.com/laurentmichel) ☕ — it helps me keep building new cards and
+supporting the latest Home Assistant releases. Stars, issues and ideas on GitHub are very welcome too!
