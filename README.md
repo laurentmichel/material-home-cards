@@ -13,6 +13,7 @@ et retombent sur les couleurs Home Assistant sinon.
 | Bouton pour n'importe quelle entité | `custom:m3-button-card` |
 | Popup ouverte par un `#hash` | `custom:m3-popup-card` |
 | Pièce : température, humidité, lumière et chauffage | `custom:m3-room-card` |
+| Liste de réglages (lignes empilées) | `custom:m3-list-card` |
 | Badge pour le haut des vues | `custom:m3-badge` |
 
 ## Installation (HACS)
@@ -185,6 +186,36 @@ hold_action:                                       # facultatif, sinon allumer /
   action: more-info
 ```
 
+## `m3-list-card`
+
+Liste au style Material 3 Expressive, comme les réglages Android : des lignes empilées qui forment un bloc
+aux grands coins arrondis. Chaque ligne a une icône, un titre, un sous-titre (l'état de l'entité par défaut)
+et, à droite, un interrupteur, l'état ou une flèche. Une ligne active se teinte en couleur primaire.
+
+À droite, `auto` choisit un interrupteur pour ce qui s'allume (lumière, prise…) et une flèche pour une
+action « Naviguer » ou « URL ». L'appui fait l'action par défaut de l'entité (comme `m3-button-card`),
+l'appui long ouvre la fenêtre de détails.
+
+```yaml
+type: custom:m3-list-card
+title: Réglages          # facultatif
+radius: large            # facultatif : small, medium, large (défaut) ou un nombre de px
+dynamic: true            # facultatif, teinte les lignes actives (défaut true)
+rows:
+  - entity: light.salon
+  - entity: switch.prise_cafe
+    name: Machine à café
+  - entity: scene.soiree
+    label: Lancer la scène       # remplace l'état en sous-titre
+  - entity: sensor.maison_temperature
+    trailing: state              # auto, switch, state, chevron ou none
+  - name: Bureau
+    icon: mdi:desktop-tower-monitor
+    tap_action:
+      action: navigate
+      navigation_path: '#bureau'
+```
+
 ## `m3-badge`
 
 Badge à placer en haut d'une vue (Modifier → Badges), au style « chip » de Material 3 : icône et valeur
@@ -230,7 +261,7 @@ et **recharge automatiquement la page Home Assistant** à chaque sauvegarde dans
 1. `npm run dev` : l'adresse à utiliser s'affiche, par exemple `http://192.168.1.20:5000/material-home-cards-dev.js`
 2. Paramètres → Tableaux de bord → ⋮ → Ressources → ajouter cette adresse en **module JavaScript** (une seule fois)
 3. Dans un tableau de bord de test, utiliser les types `-dev` :
-   `custom:m3-thermostat-card-dev`, `custom:m3-light-slider-card-dev`, `custom:m3-graph-card-dev`, `custom:m3-button-card-dev`, `custom:m3-popup-card-dev`, `custom:m3-room-card-dev` et `custom:m3-badge-dev`
+   `custom:m3-thermostat-card-dev`, `custom:m3-light-slider-card-dev`, `custom:m3-graph-card-dev`, `custom:m3-button-card-dev`, `custom:m3-popup-card-dev`, `custom:m3-room-card-dev`, `custom:m3-list-card-dev` et `custom:m3-badge-dev`
 
 Les types `-dev` cohabitent avec la version installée par HACS, qui reste intacte. Le port se change avec
 `PORT=5001 npm run dev`. Si Home Assistant est ouvert en **https**, le navigateur bloque une ressource en http :

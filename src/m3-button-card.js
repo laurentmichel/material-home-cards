@@ -28,35 +28,6 @@ const HOLD_MS = 500;
 // Délai pour attendre un second appui, seulement si un double appui est configuré.
 const DOUBLE_TAP_MS = 250;
 
-// États considérés comme « actifs » : la carte prend alors la teinte primary-container.
-const ACTIVE_STATES = new Set([
-  'on', 'open', 'opening', 'closing', 'playing', 'unlocked', 'unlocking', 'home',
-  'heat', 'cool', 'heat_cool', 'auto', 'dry', 'fan_only', 'cleaning', 'active',
-  'armed_home', 'armed_away', 'armed_night', 'armed_vacation', 'armed_custom_bypass', 'triggered',
-]);
-
-const TOGGLE_DOMAINS = new Set([
-  'light', 'switch', 'input_boolean', 'fan', 'cover', 'humidifier', 'siren', 'valve', 'group', 'remote',
-]);
-
-// Action par défaut d'un appui, selon le domaine ; null = fenêtre de détails.
-function defaultTapService(stateObj) {
-  const [domain] = stateObj.entity_id.split('.');
-  const s = stateObj.state;
-  if (TOGGLE_DOMAINS.has(domain)) return ['homeassistant', 'toggle'];
-  switch (domain) {
-    case 'scene': return ['scene', 'turn_on'];
-    case 'script': return ['script', 'turn_on'];
-    case 'automation': return ['automation', 'trigger'];
-    case 'button': return ['button', 'press'];
-    case 'input_button': return ['input_button', 'press'];
-    case 'lock': return ['lock', s === 'locked' ? 'unlock' : 'lock'];
-    case 'media_player': return ['media_player', 'media_play_pause'];
-    case 'vacuum': return ['vacuum', s === 'cleaning' ? 'return_to_base' : 'start'];
-    default: return null;
-  }
-}
-
 class M3ButtonCardEditor extends M3CardEditor {
   static schema = [
     { name: 'entity', required: true, selector: { entity: {} } },
@@ -157,8 +128,7 @@ class M3ButtonCard extends HTMLElement {
     const c = this._config;
     const s = this._stateObj;
     const offline = !s || s.state === 'unavailable' || s.state === 'unknown';
-    const domain = c.entity.split('.')[0];
-    const active = !offline && (domain === 'climate' ? s.state !== 'off' : ACTIVE_STATES.has(s.state));
+    const active = !offline && isActive(s);
 
     this.toggleAttribute('offline', offline);
     const text = this._stateText(s, active, offline);

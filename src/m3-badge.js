@@ -56,8 +56,6 @@ const HA_COLORS = new Set([
 ]);
 const cssColor = (c) => (HA_COLORS.has(c) ? `var(--${c}-color)` : c);
 
-const ACTIVE_STATES = new Set(['on', 'open', 'playing', 'unlocked', 'home', 'cleaning', 'heat', 'cool', 'heat_cool', 'auto', 'dry', 'fan_only', 'active']);
-
 class M3BadgeEditor extends M3CardEditor {
   static schema = [
     { name: 'entity', selector: { entity: {} } },
@@ -203,7 +201,7 @@ class M3Badge extends HTMLElement {
     let color = this._get('color');
     if (!color || color === 'state') {
       const [domain] = (c.entity ?? '').split('.');
-      color = s && ACTIVE_STATES.has(s.state)
+      color = isActive(s)
         ? `var(--state-${domain}-${s.state}-color, var(--state-${domain}-active-color, var(--state-active-color)))`
         : 'var(--state-inactive-color, var(--disabled-color))';
     }
