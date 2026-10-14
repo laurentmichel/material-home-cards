@@ -7,7 +7,8 @@ They automatically pick up the colors of a Material You theme
 (`--md-sys-color-*` variables, for example [Material You Theme](https://github.com/Nerwyn/material-you-theme))
 and fall back to the Home Assistant colors otherwise.
 
-<p align="center"><img src="https://raw.githubusercontent.com/laurentmichel/material-home-cards/main/docs/images/hero.png" alt="Material Home Cards" width="720"></p>
+<p align="center"><img src="https://raw.githubusercontent.com/laurentmichel/material-home-cards/main/docs/images/hero.png" alt="Material Home Cards" width="900"></p>
+<p align="center"><sub>Dark and light mode, with the Material You theme.</sub></p>
 
 | Card | Type |
 |---|---|
@@ -44,7 +45,7 @@ back to English. Entity states use Home Assistant's own translations. To add a l
 
 ## `m3-light-slider-card`
 
-<img src="https://raw.githubusercontent.com/laurentmichel/material-home-cards/main/docs/images/slider.png" alt="m3-light-slider-card" width="440">
+<img src="https://raw.githubusercontent.com/laurentmichel/material-home-cards/main/docs/images/slider.png" alt="m3-light-slider-card" width="880">
 
 The whole card is a slider: dragging horizontally sets the brightness, and the filled part takes the light's
 actual color (RGB or white temperature), as a pastel tone.
@@ -64,7 +65,7 @@ icon: mdi:lamp      # optional
 
 ## `m3-thermostat-card`
 
-<img src="https://raw.githubusercontent.com/laurentmichel/material-home-cards/main/docs/images/thermostat.png" alt="m3-thermostat-card" width="440">
+<img src="https://raw.githubusercontent.com/laurentmichel/material-home-cards/main/docs/images/thermostat.png" alt="m3-thermostat-card" width="880">
 
 Large target temperature between − / + buttons, with the mode and current temperature below
 ("Heat • 23.1 °C"). The displayed target changes as soon as you tap; a single command is sent
@@ -83,7 +84,7 @@ The on / off chip at the top right turns the thermostat on or off; tapping anywh
 
 ## `m3-graph-card`
 
-<img src="https://raw.githubusercontent.com/laurentmichel/material-home-cards/main/docs/images/graph.png" alt="m3-graph-card" width="440">
+<img src="https://raw.githubusercontent.com/laurentmichel/material-home-cards/main/docs/images/graph.png" alt="m3-graph-card" width="880">
 
 Name and current value of a numeric sensor, with its smoothed history curve in the background.
 The curve updates live and the history is reloaded every 5 minutes.
@@ -104,7 +105,7 @@ Tapping opens the more-info dialog.
 
 ## `m3-multi-graph-card`
 
-<img src="https://raw.githubusercontent.com/laurentmichel/material-home-cards/main/docs/images/multi-graph.png" alt="m3-multi-graph-card" width="440">
+<img src="https://raw.githubusercontent.com/laurentmichel/material-home-cards/main/docs/images/multi-graph.png" alt="m3-multi-graph-card" width="880">
 
 Several sensors on one graph, for example indoor and outdoor temperature: values at the top
 (first sensor on the left, last one on the right), smoothed curves with a gradient at the bottom, on a shared
@@ -128,7 +129,7 @@ entities:
 
 ## `m3-button-card`
 
-<img src="https://raw.githubusercontent.com/laurentmichel/material-home-cards/main/docs/images/button.png" alt="m3-button-card" width="440">
+<img src="https://raw.githubusercontent.com/laurentmichel/material-home-cards/main/docs/images/button.png" alt="m3-button-card" width="880">
 
 Icon, name and state of any entity. The card takes the `primary-container` tint when the entity is active
 (on, open, playing, heating…) and shows a warning when it is offline.
@@ -174,7 +175,7 @@ chip: >-                # optional: chip on the right (text or template), hidden
 
 ## `m3-scene-card`
 
-<img src="https://raw.githubusercontent.com/laurentmichel/material-home-cards/main/docs/images/scene.png" alt="m3-scene-card" width="440">
+<img src="https://raw.githubusercontent.com/laurentmichel/material-home-cards/main/docs/images/scene.png" alt="m3-scene-card" width="880">
 
 Scene selector as a Material 3 Expressive button group: the buttons are joined in a row, rounded at both ends,
 and the **active scene** (the last one activated) widens and shows its name. With `off`, a last button turns the
@@ -200,7 +201,7 @@ off:                     # optional, or simply "off: light.all"
 
 ## `m3-media-card`
 
-<img src="https://raw.githubusercontent.com/laurentmichel/material-home-cards/main/docs/images/media.png" alt="m3-media-card" width="440">
+<img src="https://raw.githubusercontent.com/laurentmichel/material-home-cards/main/docs/images/media.png" alt="m3-media-card" width="880">
 
 Media player: artwork, title and artist, app or source, progress bar (tap or drag to seek), controls
 (shuffle, previous, play / pause, next, repeat) and volume. The background and accent use the artwork's colors
@@ -219,7 +220,7 @@ artwork_colors: true     # optional, colors taken from the artwork (default true
 
 ## `m3-person-card`
 
-<img src="https://raw.githubusercontent.com/laurentmichel/material-home-cards/main/docs/images/person.png" alt="m3-person-card" width="440">
+<img src="https://raw.githubusercontent.com/laurentmichel/material-home-cards/main/docs/images/person.png" alt="m3-person-card" width="880">
 
 Greeting: the photo and "Good morning, Laurent!" ("Good afternoon" / "Good evening" later in the day) for the
 logged-in user, with their state below,
@@ -239,7 +240,7 @@ background: false        # optional, card background (default false)
 
 ## `m3-map-card`
 
-<img src="https://raw.githubusercontent.com/laurentmichel/material-home-cards/main/docs/images/map.png" alt="m3-map-card" width="440">
+<img src="https://raw.githubusercontent.com/laurentmichel/material-home-cards/main/docs/images/map.png" alt="m3-map-card" width="880">
 
 A robot's map redrawn in Material 3 colors. When the map camera provides an SVG (as the Dreame Mower integration
 does), the card removes the background, title and legend, recolors the lawn, mowing path, obstacles and robot
@@ -257,7 +258,7 @@ height: 360                      # optional, maximum height in px
 
 ## `m3-weather-card`
 
-<img src="https://raw.githubusercontent.com/laurentmichel/material-home-cards/main/docs/images/weather.png" alt="m3-weather-card" width="440">
+<img src="https://raw.githubusercontent.com/laurentmichel/material-home-cards/main/docs/images/weather.png" alt="m3-weather-card" width="880">
 
 Weather: temperature, sky, feels-like, humidity and wind, on a background tinted by the weather (night icons after
 sunset), then the hourly or daily forecast, received live.
@@ -271,7 +272,7 @@ forecast_slots: 8        # optional, number of forecast slots
 
 ## `m3-progress-card`
 
-<img src="https://raw.githubusercontent.com/laurentmichel/material-home-cards/main/docs/images/progress.png" alt="m3-progress-card" width="440">
+<img src="https://raw.githubusercontent.com/laurentmichel/material-home-cards/main/docs/images/progress.png" alt="m3-progress-card" width="880">
 
 Follows a task: state, percentage, progress bar, time left and end time (updated continuously).
 
@@ -288,7 +289,7 @@ color: orange                             # optional
 
 ## `m3-popup-card`
 
-<img src="https://raw.githubusercontent.com/laurentmichel/material-home-cards/main/docs/images/popup.png" alt="m3-popup-card" width="320">
+<img src="https://raw.githubusercontent.com/laurentmichel/material-home-cards/main/docs/images/popup.png" alt="m3-popup-card" width="640">
 
 A popup that opens when the URL contains its `#hash`: a sheet sliding up from the bottom on mobile, a centered
 dialog on desktop. It can hold any cards. On the dashboard the card is invisible; in edit mode, a placeholder with
@@ -334,7 +335,7 @@ The visual editor handles the hash, header, behavior and style; the `cards` list
 
 ## `m3-room-card`
 
-<img src="https://raw.githubusercontent.com/laurentmichel/material-home-cards/main/docs/images/room.png" alt="m3-room-card" width="440">
+<img src="https://raw.githubusercontent.com/laurentmichel/material-home-cards/main/docs/images/room.png" alt="m3-room-card" width="880">
 
 A room: icon and name, large temperature with humidity next to it. The background takes the light's pastel color
 when it is on, and the icon becomes a red flame while the heating is on (thermostat in any mode other than off).
@@ -357,7 +358,7 @@ hold_action:                                      # optional, otherwise toggle t
 
 ## `m3-list-card`
 
-<img src="https://raw.githubusercontent.com/laurentmichel/material-home-cards/main/docs/images/list.png" alt="m3-list-card" width="440">
+<img src="https://raw.githubusercontent.com/laurentmichel/material-home-cards/main/docs/images/list.png" alt="m3-list-card" width="880">
 
 A Material 3 Expressive list, like Android settings: stacked rows forming a block with large rounded corners.
 Each row has an icon, a title, a subtitle (the entity state by default) and, on the right, a switch, the state or
@@ -398,7 +399,7 @@ The rows also work with [auto-entities](https://github.com/thomasloven/lovelace-
 
 ## `m3-badge`
 
-<img src="https://raw.githubusercontent.com/laurentmichel/material-home-cards/main/docs/images/badge.png" alt="m3-badge" width="440">
+<img src="https://raw.githubusercontent.com/laurentmichel/material-home-cards/main/docs/images/badge.png" alt="m3-badge" width="880">
 
 A badge for the top of a view (Edit → Badges), in the Material 3 "chip" style: icon and value on a background
 tinted with the badge's color. Without a color, it uses the state color, like native badges.
