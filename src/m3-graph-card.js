@@ -25,8 +25,8 @@ svg {
 .icon { flex: none; display: flex; color: var(--m3-icon-fg, inherit); }
 .icon ha-state-icon { --mdc-icon-size: 24px; }
 .text { flex: 1; min-width: 0; }
-.name { font-size: 15px; font-weight: 550; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.value { font-size: 13px; font-weight: 500; opacity: 0.8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.name { ${TITLE_FONT} white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.value { ${STATE_FONT} white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .chevron { --mdc-icon-size: 22px; flex: none; opacity: 0.9; }
 :host(:not([chevron])) .chevron { display: none; }
 :host([unavailable]) ha-card { opacity: 0.5; }

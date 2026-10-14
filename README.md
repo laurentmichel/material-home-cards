@@ -10,6 +10,7 @@ et retombent sur les couleurs Home Assistant sinon.
 | Slider de lumière teinté avec la couleur de la lumière | `custom:m3-light-slider-card` |
 | Thermostat avec consigne réglable | `custom:m3-thermostat-card` |
 | Capteur avec courbe d'historique | `custom:m3-graph-card` |
+| Bouton pour n'importe quelle entité | `custom:m3-button-card` |
 
 ## Installation (HACS)
 
@@ -20,7 +21,7 @@ et retombent sur les couleurs Home Assistant sinon.
 HACS ajoute lui-même la ressource `/hacsfiles/material-home-cards/material-home-cards.js`.
 
 Les cartes ont un **éditeur visuel** et apparaissent dans le sélecteur de cartes sous « M3 Light Slider »,
-« M3 Thermostat » et « M3 Graph ».
+« M3 Thermostat », « M3 Graph » et « M3 Button ».
 Le YAML ci-dessous reste utilisable.
 
 ## `m3-light-slider-card`
@@ -77,6 +78,41 @@ show_chevron: true     # facultatif, chevron à droite (défaut false)
 
 Un appui ouvre la fenêtre de détails.
 
+## `m3-button-card`
+
+Icône, nom et état de n'importe quelle entité. La carte prend la teinte `primary-container` quand
+l'entité est active (allumée, ouverte, en lecture, en chauffe…) et affiche une alerte quand elle est hors ligne.
+
+| Entité | Appui (par défaut) |
+|---|---|
+| Lumière, prise, interrupteur, ventilateur, volet, groupe… | Allumer / éteindre |
+| Scène, script | Lancer |
+| Bouton, input_button | Appuyer |
+| Automatisation | Déclencher |
+| Serrure | Verrouiller / déverrouiller |
+| Lecteur multimédia | Lecture / pause |
+| Aspirateur | Démarrer / retour à la base |
+| Autres (capteurs, thermostat…) | Fenêtre de détails |
+
+L'appui long ouvre la fenêtre de détails. Les deux se remplacent par n'importe quelle action Home Assistant.
+
+```yaml
+type: custom:m3-button-card
+entity: light.bureau
+name: Bureau            # facultatif
+icon: mdi:lamp          # facultatif, sinon l'icône de l'entité selon son état
+icon_on: mdi:lamp       # facultatif, icône quand l'entité est active
+icon_off: mdi:lamp-outline
+text_on: Allumée        # facultatif, remplace le texte d'état
+text_off: Éteinte
+show_state: true        # facultatif (défaut true)
+tap_action:             # facultatif, sinon l'action par défaut ci-dessus
+  action: navigate
+  navigation_path: /lovelace/bureau
+hold_action:            # facultatif, sinon la fenêtre de détails
+  action: more-info
+```
+
 ## Développement
 
 ### Tester sans publier
@@ -87,7 +123,7 @@ et **recharge automatiquement la page Home Assistant** à chaque sauvegarde dans
 1. `npm run dev` : l'adresse à utiliser s'affiche, par exemple `http://192.168.1.20:5000/material-home-cards-dev.js`
 2. Paramètres → Tableaux de bord → ⋮ → Ressources → ajouter cette adresse en **module JavaScript** (une seule fois)
 3. Dans un tableau de bord de test, utiliser les types `-dev` :
-   `custom:m3-thermostat-card-dev`, `custom:m3-light-slider-card-dev` et `custom:m3-graph-card-dev`
+   `custom:m3-thermostat-card-dev`, `custom:m3-light-slider-card-dev`, `custom:m3-graph-card-dev` et `custom:m3-button-card-dev`
 
 Les types `-dev` cohabitent avec la version installée par HACS, qui reste intacte. Le port se change avec
 `PORT=5001 npm run dev`. Si Home Assistant est ouvert en **https**, le navigateur bloque une ressource en http :

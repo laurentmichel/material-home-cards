@@ -21,8 +21,8 @@ ha-card {
 .icon { flex: none; display: flex; color: var(--m3-icon-fg); transition: color 300ms ease; }
 .icon ha-icon { --mdc-icon-size: 24px; }
 .text { flex: 1; min-width: 0; }
-.name { font-size: 15px; font-weight: 550; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.state { font-size: 13px; font-weight: 500; opacity: 0.8; }
+.name { ${TITLE_FONT} white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.state { ${STATE_FONT} }
 .pct { color: var(--m3-pct-fg); transition: color 300ms ease; font-size: 1.5rem; font-weight: 400; font-variant-numeric: tabular-nums; }
 :host([unavailable]) ha-card { opacity: 0.5; cursor: default; }
 `;

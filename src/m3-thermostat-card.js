@@ -17,7 +17,7 @@ button {
 button:focus-visible { outline: 2px solid var(--m3-primary); outline-offset: 2px; }
 .header { display: flex; align-items: center; gap: 12px; min-height: 32px; }
 .mode-icon { --mdc-icon-size: 20px; flex: none; }
-.name { flex: 1; min-width: 0; font-size: 1rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.name { flex: 1; min-width: 0; ${TITLE_FONT} white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .power {
   display: flex; align-items: center; gap: 6px; flex: none;
   height: 32px; padding: 0 14px 0 10px; border-radius: 16px;
@@ -40,7 +40,7 @@ button:focus-visible { outline: 2px solid var(--m3-primary); outline-offset: 2px
   font-size: 4.5rem; font-weight: 400; line-height: 1.1; letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums; text-align: center;
 }
-.status { text-align: center; font-size: 1rem; opacity: 0.85; }
+.status { text-align: center; ${STATE_FONT} }
 :host([no-target]) .step { visibility: hidden; }
 :host([off]) .target { opacity: 0.6; }
 :host([unavailable]) ha-card { opacity: 0.5; pointer-events: none; }
