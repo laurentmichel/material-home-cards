@@ -13,6 +13,7 @@ et retombent sur les couleurs Home Assistant sinon.
 | Plusieurs capteurs sur un même graphique | `custom:m3-multi-graph-card` |
 | Sélecteur de scènes | `custom:m3-scene-card` |
 | Lecteur multimédia | `custom:m3-media-card` |
+| Accueil « Bonjour » avec les personnes | `custom:m3-person-card` |
 | Bouton pour n'importe quelle entité | `custom:m3-button-card` |
 | Popup ouverte par un `#hash` | `custom:m3-popup-card` |
 | Pièce : température, humidité, lumière et chauffage | `custom:m3-room-card` |
@@ -187,6 +188,23 @@ show_source: true        # facultatif, application ou source (défaut true)
 artwork_colors: true     # facultatif, couleurs tirées de la pochette (défaut true)
 ```
 
+## `m3-person-card`
+
+Accueil : la photo et « Bonjour Laurent ! » (« Bonsoir » à partir de 18 h) pour l'utilisateur connecté, avec son
+état dessous, et les photos des autres personnes à droite. Une personne absente passe en gris ; une pastille
+indique qui est à la maison. Sans photo, l'avatar affiche l'initiale. Un appui ouvre la fenêtre de détails.
+
+```yaml
+type: custom:m3-person-card
+persons:                 # facultatif, sinon toutes les personnes sauf vous
+  - person.laurent
+  - person.alicia
+greeting: Salut !        # facultatif, remplace « Bonjour <prénom> ! »
+show_state: true         # facultatif (défaut true)
+show_dot: true           # facultatif, pastille « à la maison » (défaut true)
+background: false        # facultatif, fond de carte (défaut false)
+```
+
 ## `m3-popup-card`
 
 Popup qui s'ouvre quand l'URL contient son `#hash` : un panneau qui glisse depuis le bas sur mobile, une
@@ -328,7 +346,7 @@ et **recharge automatiquement la page Home Assistant** à chaque sauvegarde dans
 1. `npm run dev` : l'adresse à utiliser s'affiche, par exemple `http://192.168.1.20:5000/material-home-cards-dev.js`
 2. Paramètres → Tableaux de bord → ⋮ → Ressources → ajouter cette adresse en **module JavaScript** (une seule fois)
 3. Dans un tableau de bord de test, utiliser les types `-dev` :
-   `custom:m3-thermostat-card-dev`, `custom:m3-light-slider-card-dev`, `custom:m3-graph-card-dev`, `custom:m3-button-card-dev`, `custom:m3-popup-card-dev`, `custom:m3-room-card-dev`, `custom:m3-list-card-dev`, `custom:m3-scene-card-dev`, `custom:m3-multi-graph-card-dev`, `custom:m3-media-card-dev` et `custom:m3-badge-dev`
+   `custom:m3-thermostat-card-dev`, `custom:m3-light-slider-card-dev`, `custom:m3-graph-card-dev`, `custom:m3-button-card-dev`, `custom:m3-popup-card-dev`, `custom:m3-room-card-dev`, `custom:m3-list-card-dev`, `custom:m3-scene-card-dev`, `custom:m3-multi-graph-card-dev`, `custom:m3-media-card-dev`, `custom:m3-person-card-dev` et `custom:m3-badge-dev`
 
 Les types `-dev` cohabitent avec la version installée par HACS, qui reste intacte. Le port se change avec
 `PORT=5001 npm run dev`. Si Home Assistant est ouvert en **https**, le navigateur bloque une ressource en http :
