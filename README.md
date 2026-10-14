@@ -59,6 +59,22 @@ Le bouton « Marche / Arrêt » en haut à droite allume / éteint ; un appui ai
 
 ## Développement
 
+### Tester sans publier
+
+`npm run dev` lance un petit serveur local (sans dépendance) qui sert une version de dev des cartes
+et **recharge automatiquement la page Home Assistant** à chaque sauvegarde dans `src/`.
+
+1. `npm run dev` : l'adresse à utiliser s'affiche, par exemple `http://192.168.1.20:5000/material-home-cards-dev.js`
+2. Paramètres → Tableaux de bord → ⋮ → Ressources → ajouter cette adresse en **module JavaScript** (une seule fois)
+3. Dans un tableau de bord de test, utiliser les types `-dev` :
+   `custom:m3-thermostat-card-dev` et `custom:m3-light-slider-card-dev`
+
+Les types `-dev` cohabitent avec la version installée par HACS, qui reste intacte. Le port se change avec
+`PORT=5001 npm run dev`. Si Home Assistant est ouvert en **https**, le navigateur bloque une ressource en http :
+tester depuis l'adresse locale en http de Home Assistant.
+
+### Publier
+
 Les sources sont dans `src/`, une carte par fichier. `npm run build` (ou `node build.mjs`)
 les assemble dans `dist/material-home-cards.js`, le fichier chargé par HACS : pensez à le
 reconstruire et à le committer avant chaque release.
