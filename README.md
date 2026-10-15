@@ -23,6 +23,7 @@ and fall back to the Home Assistant colors otherwise.
 | Weather and forecast | `custom:m3-weather-card` |
 | Task in progress (3D print, washing machine…) | `custom:m3-progress-card` |
 | Camera with no black screen while the live view connects | `custom:m3-camera-card` |
+| Roller shutter (Somfy TaHoma, solar shutters…) | `custom:m3-cover-card` |
 | Button for any entity | `custom:m3-button-card` |
 | Popup opened by a `#hash` | `custom:m3-popup-card` |
 | Room: temperature, humidity, light and heating | `custom:m3-room-card` |
@@ -305,6 +306,29 @@ fit_mode: cover            # optional: cover (default) or contain
 aspect_ratio: "16:9"       # optional, otherwise taken from the camera image
 ```
 
+## `m3-cover-card`
+
+Controls a roller shutter or any `cover` entity (Somfy TaHoma through the Overkiz integration, Zigbee…).
+A window shows the shutter going down with the position: drag it up or down to set the position.
+Open / stop / close buttons, optional favorite positions, and the battery level for solar shutters
+(highlighted at 20 % or less). Covers without a position only get open and close.
+
+```yaml
+type: custom:m3-cover-card
+entity: cover.living_room
+name: Living room              # optional
+color: teal                    # optional, otherwise the theme's primary color
+battery: sensor.living_room_battery   # optional, battery level of a solar shutter
+favorites:                     # optional, 100 = fully open, 0 = closed
+  - position: 100
+    name: Open
+  - position: 30
+    name: Nap
+    icon: mdi:weather-sunny
+  - position: 0
+    name: Night
+```
+
 ## `m3-popup-card`
 
 <img src="https://raw.githubusercontent.com/laurentmichel/material-home-cards/main/docs/images/popup.png" alt="m3-popup-card" width="640">
@@ -465,7 +489,7 @@ visibility:
    `custom:m3-graph-card-dev`, `custom:m3-button-card-dev`, `custom:m3-popup-card-dev`, `custom:m3-room-card-dev`,
    `custom:m3-list-card-dev`, `custom:m3-scene-card-dev`, `custom:m3-multi-graph-card-dev`,
    `custom:m3-media-card-dev`, `custom:m3-person-card-dev`, `custom:m3-map-card-dev`,
-   `custom:m3-weather-card-dev`, `custom:m3-progress-card-dev`, `custom:m3-camera-card-dev` and `custom:m3-badge-dev`
+   `custom:m3-weather-card-dev`, `custom:m3-progress-card-dev`, `custom:m3-camera-card-dev`, `custom:m3-cover-card-dev` and `custom:m3-badge-dev`
 
 The `-dev` types coexist with the version installed by HACS, which stays untouched. Change the port with
 `PORT=5001 npm run dev`. If Home Assistant is opened over **https**, the browser blocks an http resource:
