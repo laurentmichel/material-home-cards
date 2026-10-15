@@ -1,5 +1,5 @@
-/*! Material Home Cards v1.17.1 — https://github.com/laurentmichel/material-home-cards */
-console.info('%c MATERIAL-HOME-CARDS %c v1.17.1 ', 'color:#fff;background:#6750a4;font-weight:700', 'color:#6750a4;background:#eaddff');
+/*! Material Home Cards v1.17.2 — https://github.com/laurentmichel/material-home-cards */
+console.info('%c MATERIAL-HOME-CARDS %c v1.17.2 ', 'color:#fff;background:#6750a4;font-weight:700', 'color:#6750a4;background:#eaddff');
 
 // ---- shared/color.js ----
 // Couleurs nommées de HA (amber, blue...) → variables du thème ; le reste (hex, rgb) tel quel.
@@ -3398,7 +3398,7 @@ ha-card {
 .top { display: flex; align-items: center; gap: 14px; }
 .icon {
   flex: none; width: 48px; height: 48px; border-radius: 16px; overflow: hidden; display: flex; align-items: center; justify-content: center;
-  background: color-mix(in srgb, var(--m3-accent) 22%, transparent); color: var(--m3-accent); --mdc-icon-size: 26px;
+  color: var(--m3-accent); --mdc-icon-size: 26px;
 }
 .icon img { width: 100%; height: 100%; object-fit: cover; }
 .icon img[hidden], .icon ha-icon[hidden] { display: none; }

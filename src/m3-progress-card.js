@@ -11,7 +11,7 @@ ha-card {
 .top { display: flex; align-items: center; gap: 14px; }
 .icon {
   flex: none; width: 48px; height: 48px; border-radius: 16px; overflow: hidden; display: flex; align-items: center; justify-content: center;
-  background: color-mix(in srgb, var(--m3-accent) 22%, transparent); color: var(--m3-accent); --mdc-icon-size: 26px;
+  color: var(--m3-accent); --mdc-icon-size: 26px;
 }
 .icon img { width: 100%; height: 100%; object-fit: cover; }
 .icon img[hidden], .icon ha-icon[hidden] { display: none; }
