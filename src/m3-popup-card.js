@@ -19,7 +19,7 @@ button {
 }
 `;
 
-// Styles de la popup elle-même : elle est rendue dans document.body, hors des conteneurs du tableau de bord.
+// Styles de la popup elle-même : elle est rendue à la racine de <home-assistant>, hors des conteneurs du tableau de bord.
 const POPUP_STYLE = `
 :host { position: fixed; inset: 0; z-index: 7; display: block; }
 .backdrop {
@@ -266,7 +266,7 @@ class M3PopupCard extends HTMLElement {
         <div class="body"></div>
       </div>`;
     const st = popup.style;
-    // Rendue dans document.body, la popup n'hérite pas de la police du tableau de bord : on reprend celle de la carte.
+    // Rendue hors du tableau de bord, la popup n'hérite pas de la police du tableau de bord : on reprend celle de la carte.
     const font = getComputedStyle(this);
     st.fontFamily = font.fontFamily;
     st.setProperty('-webkit-font-smoothing', font.getPropertyValue('-webkit-font-smoothing') || 'antialiased');
@@ -305,7 +305,9 @@ class M3PopupCard extends HTMLElement {
     this._onKey = (e) => { if (e.key === 'Escape') this._close(); };
     window.addEventListener('keydown', this._onKey);
 
-    document.body.appendChild(popup);
+    // Dans l'arbre de <home-assistant>, comme les dialogues natifs : les composants HA (ha-camera-stream...)
+    // y trouvent les données qu'ils demandent par contexte. Dans document.body, le flux vidéo ne démarre pas.
+    (document.querySelector('home-assistant')?.shadowRoot ?? document.body).appendChild(popup);
     this._renderHeader();
     const body = root.querySelector('.body');
     for (const card of await this._createCards()) body.appendChild(card);
