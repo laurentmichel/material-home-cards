@@ -153,6 +153,7 @@ type: custom:m3-button-card
 entity: light.office
 name: Office            # optional
 icon: mdi:lamp          # optional, otherwise the entity's icon for its state
+layout: auto            # optional: auto (icon above the name when it doesn't fit), horizontal or vertical
 icon_on: mdi:lamp       # optional, icon when the entity is active
 icon_off: mdi:lamp-outline
 text_on: "On"           # optional, replaces the state text

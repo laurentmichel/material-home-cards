@@ -27,6 +27,12 @@ ha-card:active { transform: scale(0.98); }
 .chip:empty { display: none; }
 :host(:not([offline])) .badge { display: none; }
 :host([offline]) ha-card { opacity: 0.6; }
+/* Nom trop long pour tenir à côté de l'icône : icône au-dessus, nom centré sur deux lignes. */
+:host([compact]) ha-card { flex-direction: column; justify-content: center; gap: 6px; padding: 10px 8px; text-align: center; }
+:host([compact]) .text { flex: none; width: 100%; }
+:host([compact]) .name { white-space: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow-wrap: anywhere; }
+:host([compact]) .chip { position: absolute; top: 8px; right: 8px; }
+:host([compact]) .badge { position: absolute; top: 8px; left: 8px; }
 `;
 
 const SURFACE = 'var(--md-sys-color-surface-container-high, var(--ha-card-background, var(--card-background-color)))';
@@ -43,6 +49,16 @@ class M3ButtonCardEditor extends M3CardEditor {
         { name: 'name', selector: { text: {} } },
         { name: 'icon', selector: { icon: {} }, context: { icon_entity: 'entity' } },
       ],
+    },
+    {
+      name: 'layout', selector: {
+        select: {
+          mode: 'dropdown', options: [
+            { value: 'auto', label: 'Automatic' }, { value: 'horizontal', label: 'Icon beside the name' },
+            { value: 'vertical', label: 'Icon above the name' },
+          ],
+        },
+      },
     },
     {
       type: 'expandable', name: '', title: 'On / off', icon: 'mdi:toggle-switch-outline', schema: [
@@ -70,7 +86,7 @@ class M3ButtonCardEditor extends M3CardEditor {
   ];
 
   static labels = {
-    entity: 'Entity', name: 'Name', icon: 'Icon', icon_on: 'Icon when on', icon_off: 'Icon when off',
+    entity: 'Entity', name: 'Name', icon: 'Icon', layout: 'Layout', icon_on: 'Icon when on', icon_off: 'Icon when off',
     text_on: 'Text when on', text_off: 'Text when off', show_state: 'Show the state',
     tap_action: 'Tap', hold_action: 'Long press', double_tap_action: 'Double tap',
     color: 'Color when active', active: 'Active when (template)', chip: 'Chip on the right (text or template)',
@@ -105,9 +121,13 @@ class M3ButtonCard extends HTMLElement {
     if (this._hass) this._render();
   }
 
-  connectedCallback() { this._resubscribe(); }
+  connectedCallback() {
+    this._resubscribe();
+    this._resizer ??= new ResizeObserver(() => this._fit());
+    this._resizer.observe(this);
+  }
 
-  disconnectedCallback() { unsubscribeAll(this._unsubs); this._unsubs = []; }
+  disconnectedCallback() { unsubscribeAll(this._unsubs); this._unsubs = []; this._resizer?.disconnect(); }
 
   // `active` et `chip` peuvent être des templates : Home Assistant renvoie leur résultat à chaque changement.
   _resubscribe() {
@@ -160,6 +180,17 @@ class M3ButtonCard extends HTMLElement {
     this._card.addEventListener('contextmenu', (e) => e.preventDefault());
   }
 
+  // Disposition verticale seulement si le nom ou l'état ne tient pas sur une ligne à côté de l'icône.
+  _fit() {
+    if (!this._card || !this.isConnected) return;
+    const layout = this._config.layout;
+    if (layout === 'vertical' || layout === 'horizontal') { this.toggleAttribute('compact', layout === 'vertical'); return; }
+    this.removeAttribute('compact');
+    const { name, state } = this._els;
+    const overflows = (el) => el.scrollWidth > el.clientWidth + 1;
+    this.toggleAttribute('compact', overflows(name) || (!this.hasAttribute('no-state') && overflows(state)));
+  }
+
   _render() {
     if (!this._card) return;
     const c = this._config;
@@ -180,6 +211,7 @@ class M3ButtonCard extends HTMLElement {
     });
     this._els.state.textContent = text ?? '';
     this._els.chip.textContent = (isTemplate(c.chip) ? this._tpl.chip : c.chip) ?? '';
+    this._fit();
 
     const st = this._card.style;
     if (active && c.color) {
