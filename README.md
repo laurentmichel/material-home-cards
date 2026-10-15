@@ -1,6 +1,6 @@
 # Material Home Cards
 
-[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-support-FFDD00?logo=buymeacoffee&logoColor=000)](https://buymeacoffee.com/laurentmichel)
+<a href="https://www.buymeacoffee.com/laurentmichel"><img src="https://img.buymeacoffee.com/button-api/?text=Buy%20me%20a%20coffee&emoji=%E2%98%95&slug=laurentmichel&button_colour=FFDD00&font_colour=000000&font_family=Poppins&outline_colour=000000&coffee_colour=ffffff" alt="Buy me a coffee" height="50"></a>
 
 **Material Design 3** Lovelace cards for Home Assistant, with no dependencies.
 They automatically pick up the colors of a Material You theme
@@ -467,3 +467,5 @@ To publish a version: bump `version` in `package.json`, run `npm run build`, com
 The cards are free and will stay free. If they made your dashboard a little nicer, you can
 [buy me a coffee](https://buymeacoffee.com/laurentmichel) ☕ — it helps me keep building new cards and
 supporting the latest Home Assistant releases. Stars, issues and ideas on GitHub are very welcome too!
+
+<p align="center"><a href="https://www.buymeacoffee.com/laurentmichel"><img src="https://img.buymeacoffee.com/button-api/?text=Buy%20me%20a%20coffee&emoji=%E2%98%95&slug=laurentmichel&button_colour=FFDD00&font_colour=000000&font_family=Poppins&outline_colour=000000&coffee_colour=ffffff" alt="Buy me a coffee" height="50"></a></p>
