@@ -15,6 +15,7 @@ ha-card { background: none; border: none; box-shadow: none; }
     background 300ms ease, color 300ms ease, transform 120ms ease, box-shadow 300ms ease;
 }
 .item:active { transform: scale(0.95); }
+.item ha-state-icon { flex: none; }
 .name { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .check { display: none; }
 
@@ -124,9 +125,16 @@ class M3SceneCard extends HTMLElement {
   connectedCallback() {
     this._resizer ??= new ResizeObserver(() => this._fitGroup());
     this._resizer.observe(this);
+    // Une police chargée après coup change la largeur du nom : on recalcule.
+    this._onFonts ??= () => this._fitGroup();
+    document.fonts?.addEventListener('loadingdone', this._onFonts);
+    document.fonts?.ready.then(this._onFonts);
   }
 
-  disconnectedCallback() { this._resizer?.disconnect(); }
+  disconnectedCallback() {
+    this._resizer?.disconnect();
+    document.fonts?.removeEventListener('loadingdone', this._onFonts);
+  }
 
   getGridOptions() { return { columns: 12, rows: 'auto', min_columns: 6 }; }
 
@@ -224,8 +232,9 @@ class M3SceneCard extends HTMLElement {
     const current = this._items.find(({ el }) => el.hasAttribute('active'));
     if (!width || !current) return;
     const others = this._items.length - 1;
-    const iconWidth = current.icon.getBoundingClientRect().width || 24;
-    const needed = Math.ceil(current.name.scrollWidth + iconWidth + 8 + 2 * GROUP_PADDING);
+    const iconWidth = Math.max(current.icon.getBoundingClientRect().width, 24);
+    // +2 px : scrollWidth est arrondi, un nom au pixel près serait coupé.
+    const needed = Math.ceil(current.name.scrollWidth + iconWidth + 8 + 2 * GROUP_PADDING) + 2;
     const available = width - others * (GROUP_MIN_ITEM + GROUP_GAP);
     this.style.setProperty('--m3-active-width', `${Math.max(GROUP_MIN_ITEM, Math.min(needed, available))}px`);
   }
