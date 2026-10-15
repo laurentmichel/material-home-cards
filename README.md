@@ -292,6 +292,8 @@ color: orange                             # optional
 
 ## `m3-camera-card`
 
+<img src="https://raw.githubusercontent.com/laurentmichel/material-home-cards/main/docs/images/camera.png" alt="m3-camera-card" width="880">
+
 Shows a camera without the black block of the native card while the live stream connects: the last image
 appears at once (kept on the device between visits), the live view connects behind it and fades in only once
 the video is actually playing. A chip shows "Connecting…" then "Live". Tapping opens the camera dialog.
@@ -307,6 +309,8 @@ aspect_ratio: "16:9"       # optional, otherwise taken from the camera image
 ```
 
 ## `m3-cover-card`
+
+<img src="https://raw.githubusercontent.com/laurentmichel/material-home-cards/main/docs/images/cover.png" alt="m3-cover-card" width="880">
 
 Controls a roller shutter or any `cover` entity (Somfy TaHoma through the Overkiz integration, Zigbee…).
 A window shows the shutter going down with the position: drag it up or down to set the position.
