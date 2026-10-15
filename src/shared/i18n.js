@@ -115,6 +115,7 @@ const FR = {
   "Optional: its state is shown in a chip on the map": "Facultatif : son état s’affiche dans une pastille sur la carte",
   "Other people": "Autres personnes",
   "Otherwise: duration sensor (min, h or s)": "Sinon : capteur de durée (min, h ou s)",
+  "Optional: estimated from the task start and the end time": "Facultatif : estimé depuis le début de la tâche et l’heure de fin",
   "Period": "Période",
   "Pill": "Pilule",
   "Play / pause": "Lecture / pause",

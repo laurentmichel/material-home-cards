@@ -1,5 +1,5 @@
-/*! Material Home Cards v1.17.0 — https://github.com/laurentmichel/material-home-cards */
-console.info('%c MATERIAL-HOME-CARDS %c v1.17.0 ', 'color:#fff;background:#6750a4;font-weight:700', 'color:#6750a4;background:#eaddff');
+/*! Material Home Cards v1.17.1 — https://github.com/laurentmichel/material-home-cards */
+console.info('%c MATERIAL-HOME-CARDS %c v1.17.1 ', 'color:#fff;background:#6750a4;font-weight:700', 'color:#6750a4;background:#eaddff');
 
 // ---- shared/color.js ----
 // Couleurs nommées de HA (amber, blue...) → variables du thème ; le reste (hex, rgb) tel quel.
@@ -305,6 +305,7 @@ const FR = {
   "Optional: its state is shown in a chip on the map": "Facultatif : son état s’affiche dans une pastille sur la carte",
   "Other people": "Autres personnes",
   "Otherwise: duration sensor (min, h or s)": "Sinon : capteur de durée (min, h ou s)",
+  "Optional: estimated from the task start and the end time": "Facultatif : estimé depuis le début de la tâche et l’heure de fin",
   "Period": "Période",
   "Pill": "Pilule",
   "Play / pause": "Lecture / pause",
@@ -3445,6 +3446,7 @@ class M3ProgressCardEditor extends M3CardEditor {
   static helpers = {
     end_time: 'Timestamp sensor: the time left is derived from it',
     remaining: 'Otherwise: duration sensor (min, h or s)',
+    progress: 'Optional: estimated from the task start and the end time',
   };
 }
 
@@ -3521,8 +3523,14 @@ class M3ProgressCard extends HTMLElement {
     if (!this._els || !this._hass) return;
     const c = this._config;
     const s = this._state(c.entity);
-    const progress = parseFloat(this._state(c.progress)?.state);
     const remaining = this._remaining();
+    let progress = parseFloat(this._state(c.progress)?.state);
+    // Pas de capteur de pourcentage : estimé entre le début de la tâche (dernier changement d'état) et l'heure de fin.
+    if (isNaN(progress) && remaining && s && !['unavailable', 'unknown'].includes(s.state)) {
+      const start = Date.parse(s.last_changed);
+      const total = remaining.end.getTime() - start;
+      if (total > 0) progress = ((Date.now() - start) / total) * 100;
+    }
     const image = this._state(c.image);
     const key = [s, this._state(c.progress), this._state(c.end_time), this._state(c.remaining), image].map((x) => x?.last_updated).join();
     if (key === this._key) return;
