@@ -377,7 +377,9 @@ style:
   backdrop_blur: 6
 ```
 
-The visual editor handles the hash, header, behavior and style; the `cards` list is edited in YAML.
+The visual editor handles the hash, header, behavior and style, and below them the popup's cards, like the
+native vertical stack editor: one tab per card, add, move, copy, cut, delete, and each card's own visual or
+YAML editor.
 
 ## `m3-room-card`
 

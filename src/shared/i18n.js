@@ -47,7 +47,7 @@ const FR = {
   "Daily": "Jour par jour",
   "Displayed attribute": "Attribut affiché",
   "Double tap": "Double appui",
-  "E.g. #living-room: open it with a \"Navigate\" action to #living-room. The popup's cards are edited in YAML (cards:)": "Ex. #salon : ouvrir avec une action « Naviguer » vers #salon. Les cartes de la popup se modifient en YAML (cards:)",
+  "E.g. #living-room: open it with a \"Navigate\" action to #living-room": "Ex. #salon : ouvrir avec une action « Naviguer » vers #salon",
   "Empty: \"Good morning\" or \"Good evening\" followed by the first name": "Vide : « Bonjour » ou « Bonsoir » suivi du prénom",
   "Empty: action suited to the entity (turn on, run the scene, press…)": "Vide : action adaptée à l’entité (allumer, lancer la scène, appuyer…)",
   "Empty: based on the entity state. E.g. {{ is_state('vacuum.robot', 'cleaning') }}": "Vide : selon l’état de l’entité. Ex. {{ is_state('vacuum.robot', 'cleaning') }}",

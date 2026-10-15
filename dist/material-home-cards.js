@@ -1,5 +1,5 @@
-/*! Material Home Cards v1.19.2 — https://github.com/laurentmichel/material-home-cards */
-console.info('%c MATERIAL-HOME-CARDS %c v1.19.2 ', 'color:#fff;background:#6750a4;font-weight:700', 'color:#6750a4;background:#eaddff');
+/*! Material Home Cards v1.19.3 — https://github.com/laurentmichel/material-home-cards */
+console.info('%c MATERIAL-HOME-CARDS %c v1.19.3 ', 'color:#fff;background:#6750a4;font-weight:700', 'color:#6750a4;background:#eaddff');
 
 // ---- shared/color.js ----
 // Couleurs nommées de HA (amber, blue...) → variables du thème ; le reste (hex, rgb) tel quel.
@@ -237,7 +237,7 @@ const FR = {
   "Daily": "Jour par jour",
   "Displayed attribute": "Attribut affiché",
   "Double tap": "Double appui",
-  "E.g. #living-room: open it with a \"Navigate\" action to #living-room. The popup's cards are edited in YAML (cards:)": "Ex. #salon : ouvrir avec une action « Naviguer » vers #salon. Les cartes de la popup se modifient en YAML (cards:)",
+  "E.g. #living-room: open it with a \"Navigate\" action to #living-room": "Ex. #salon : ouvrir avec une action « Naviguer » vers #salon",
   "Empty: \"Good morning\" or \"Good evening\" followed by the first name": "Vide : « Bonjour » ou « Bonsoir » suivi du prénom",
   "Empty: action suited to the entity (turn on, run the scene, press…)": "Vide : action adaptée à l’entité (allumer, lancer la scène, appuyer…)",
   "Empty: based on the entity state. E.g. {{ is_state('vacuum.robot', 'cleaning') }}": "Vide : selon l’état de l’entité. Ex. {{ is_state('vacuum.robot', 'cleaning') }}",
@@ -3830,15 +3830,78 @@ class M3PopupCardEditor extends M3CardEditor {
   };
 
   static helpers = {
-    hash: 'E.g. #living-room: open it with a "Navigate" action to #living-room. The popup\'s cards are edited in YAML (cards:)',
+    hash: 'E.g. #living-room: open it with a "Navigate" action to #living-room',
     auto_close: '0 or empty: never closes automatically',
   };
+}
+
+// Éditeur complet : celui de la carte native « Pile verticale » (onglets, ajout, déplacement, copier/couper,
+// éditeur visuel ou YAML de chaque carte), dont le champ « Titre » est remplacé par les réglages de la popup.
+// Si HA change cet éditeur interne, on retombe sur M3PopupCardEditor (réglages seuls, cartes en YAML).
+const STACK_EDITOR_TAG = 'm3-popup-stack-card-editor';
+
+async function definePopupStackEditor() {
+  if (customElements.get(STACK_EDITOR_TAG)) return STACK_EDITOR_TAG;
+  // La carte « Pile verticale » est chargée à la demande : on attend sa classe, puis celle de son éditeur.
+  const helpers = await window.loadCardHelpers?.();
+  helpers?.createCardElement({ type: 'vertical-stack', cards: [] });
+  const Stack = await Promise.race([
+    customElements.whenDefined('hui-vertical-stack-card'),
+    new Promise((resolve) => { setTimeout(resolve, 5000); }),
+  ]);
+  const editor = await Stack?.getConfigElement?.();
+  const Base = editor?.constructor;
+  if (!Base || !('_schema' in editor)) {
+    console.warn('m3-popup-card: stack card editor not found, cards stay in YAML');
+    return null;
+  }
+  const { labels, helpers: helps, schema } = M3PopupCardEditor;
+
+  customElements.define(STACK_EDITOR_TAG, class extends Base {
+    constructor() {
+      super();
+      this._computeLabelCallback = (s) => (labels[s.name] ? t(this.hass, labels[s.name]) : s.name);
+    }
+
+    // L'éditeur d'origine refuse toute clé autre que cards et title.
+    setConfig(config) {
+      this._config = { ...config, cards: config.cards ?? [] };
+    }
+
+    willUpdate(changed) {
+      super.willUpdate?.(changed);
+      const lang = langOf(this.hass);
+      if (this.hass && lang !== this._m3Lang) {
+        this._m3Lang = lang;
+        this._schema = translateSchema(this.hass, schema);
+      }
+    }
+
+    updated(changed) {
+      super.updated?.(changed);
+      const form = this.shadowRoot?.querySelector('ha-form');
+      if (form) form.computeHelper = (s) => (helps[s.name] ? t(this.hass, helps[s.name]) : undefined);
+    }
+
+    // Les champs vidés sont retirés du YAML plutôt qu'enregistrés comme chaînes vides.
+    _valueChanged(ev) {
+      ev.stopPropagation();
+      const config = { ...ev.detail.value, cards: this._config.cards };
+      for (const key of Object.keys(config)) {
+        if (config[key] === '' || config[key] == null) delete config[key];
+      }
+      this._config = config;
+      this.dispatchEvent(new CustomEvent('config-changed', { detail: { config }, bubbles: true, composed: true }));
+    }
+  });
+  return STACK_EDITOR_TAG;
 }
 
 class M3PopupCard extends HTMLElement {
   static async getConfigElement() {
     await ensureHaForm();
-    return document.createElement('m3-popup-card-editor');
+    const tag = await definePopupStackEditor().catch((e) => { console.warn('m3-popup-card:', e); return null; });
+    return document.createElement(tag ?? 'm3-popup-card-editor');
   }
 
   static getStubConfig() {
