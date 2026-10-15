@@ -1,5 +1,8 @@
 // m3-scene-card — sélecteur de scènes Material 3 : groupe de boutons, tuiles ou carrousel.
 // La scène active (la dernière lancée) est mise en avant ; un bouton « Éteindre » est possible.
+const GROUP_MIN_ITEM = 32;
+const GROUP_PADDING = 12;
+const GROUP_GAP = 4;
 const STYLE = `
 :host { display: block; }
 ha-card { background: none; border: none; box-shadow: none; }
@@ -8,20 +11,20 @@ ha-card { background: none; border: none; box-shadow: none; }
   position: relative; display: flex; align-items: center; justify-content: center; box-sizing: border-box; min-width: 0;
   background: var(--m3-bg); color: var(--m3-fg); --mdc-icon-size: 24px;
   cursor: pointer; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent;
-  transition: flex-grow 350ms cubic-bezier(0.2, 0, 0, 1), border-radius 350ms cubic-bezier(0.2, 0, 0, 1),
+  transition: flex-grow 350ms cubic-bezier(0.2, 0, 0, 1), flex-basis 350ms cubic-bezier(0.2, 0, 0, 1), border-radius 350ms cubic-bezier(0.2, 0, 0, 1),
     background 300ms ease, color 300ms ease, transform 120ms ease, box-shadow 300ms ease;
 }
 .item:active { transform: scale(0.95); }
 .name { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .check { display: none; }
 
-/* Groupe de boutons connectés (M3 Expressive) : la scène active s'élargit et affiche son nom ;
-   seules les extrémités du groupe sont arrondies. */
-:host([variant='group']) .items { gap: 4px; }
-:host([variant='group']) .item { flex: 1 1 0; height: 64px; border-radius: 10px; gap: 8px; padding: 0 12px; }
+/* Groupe de boutons connectés (M3 Expressive) : la scène active s'élargit à la largeur de son nom
+   (calculée dans _fitGroup) ; seules les extrémités du groupe sont arrondies. */
+:host([variant='group']) .items { gap: ${GROUP_GAP}px; }
+:host([variant='group']) .item { flex: 1 1 0; min-width: ${GROUP_MIN_ITEM}px; height: 64px; border-radius: 10px; gap: 8px; padding: 0; }
 :host([variant='group']) .item:first-child { border-radius: 32px 10px 10px 32px; }
 :host([variant='group']) .item:last-child { border-radius: 10px 32px 32px 10px; }
-:host([variant='group']) .item[active] { flex-grow: 2.4; }
+:host([variant='group']) .item[active] { flex: 0 0 var(--m3-active-width, auto); padding: 0 ${GROUP_PADDING}px; }
 :host([variant='group']) .name { display: none; font-size: 14px; font-weight: 550; }
 :host([variant='group']) .item[active] .name { display: block; }
 
@@ -118,6 +121,13 @@ class M3SceneCard extends HTMLElement {
 
   getCardSize() { return this._config.variant === 'carousel' ? 3 : 2; }
 
+  connectedCallback() {
+    this._resizer ??= new ResizeObserver(() => this._fitGroup());
+    this._resizer.observe(this);
+  }
+
+  disconnectedCallback() { this._resizer?.disconnect(); }
+
   getGridOptions() { return { columns: 12, rows: 'auto', min_columns: 6 }; }
 
   set hass(hass) {
@@ -204,6 +214,20 @@ class M3SceneCard extends HTMLElement {
       }
       st.setProperty('--m3-gradient', `linear-gradient(135deg, ${pastel}, color-mix(in srgb, ${color} 85%, black))`);
     }
+    this._fitGroup();
+  }
+
+  // Groupe : la scène active prend la largeur de son nom, dans la limite de ce que laissent les autres boutons.
+  _fitGroup() {
+    if (this._config?.variant !== 'group' || !this._items) return;
+    const width = this.shadowRoot.querySelector('.items').clientWidth;
+    const current = this._items.find(({ el }) => el.hasAttribute('active'));
+    if (!width || !current) return;
+    const others = this._items.length - 1;
+    const iconWidth = current.icon.getBoundingClientRect().width || 24;
+    const needed = Math.ceil(current.name.scrollWidth + iconWidth + 8 + 2 * GROUP_PADDING);
+    const available = width - others * (GROUP_MIN_ITEM + GROUP_GAP);
+    this.style.setProperty('--m3-active-width', `${Math.max(GROUP_MIN_ITEM, Math.min(needed, available))}px`);
   }
 
   _activate(item) {
