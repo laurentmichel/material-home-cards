@@ -1,0 +1,20 @@
+<!doctype html><meta charset="utf-8"><link rel="stylesheet" href="page.css">
+<script src="icons.js"></script><script src="common.js"></script><script src="../../dist/material-home-cards.js"></script>
+<div class="half dark"></div><div class="half light"></div>
+<script>
+const now = Date.now();
+const scenes = [['bright', 'Bright', 'mdi:brightness-5', 'yellow'], ['relax', 'Relax', 'mdi:sofa-outline', 'purple'],
+  ['movie', 'Movie', 'mdi:movie-open-outline', 'light-blue'], ['party', 'Party', 'mdi:party-popper', 'pink']];
+const states = { 'light.all': { entity_id: 'light.all', state: 'on', last_updated: '1', attributes: {} } };
+scenes.forEach(([id, name], i) => {
+  states['scene.' + id] = { entity_id: 'scene.' + id, state: new Date(now - (id === 'relax' ? 0 : 3600e3 + i)).toISOString(), last_updated: '1', attributes: { friendly_name: name } };
+});
+for (const half of document.querySelectorAll('.half')) {
+  const card = document.createElement('m3-scene-card');
+  card.setConfig({ type: 'custom:m3-scene-card', variant: 'group',
+    scenes: scenes.map(([id, name, icon, color]) => ({ entity: 'scene.' + id, name, icon, color })),
+    off: { entity: 'light.all', name: 'Off', icon: 'mdi:circle-outline', color: 'orange' } });
+  half.appendChild(card);
+  card.hass = fakeHass(states);
+}
+</script>

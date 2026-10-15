@@ -499,6 +499,20 @@ The `-dev` types coexist with the version installed by HACS, which stays untouch
 `PORT=5001 npm run dev`. If Home Assistant is opened over **https**, the browser blocks an http resource:
 test from Home Assistant's local http address.
 
+### Screenshots
+
+The README screenshots are rendered from the demo pages in `docs/demo/` (fake data only, dark on the left and
+light on the right), with Brave or Chromium:
+
+```sh
+npm run build
+node docs/demo/render.mjs            # every page, or e.g. `node docs/demo/render.mjs scene cover`
+```
+
+Each `docs/demo/<name>.html` page gives `docs/images/<name>.png`. Use `SCREENSHOT_BROWSER=/path/to/chromium`
+for another browser. The icons used by the pages are extracted to `icons.js` with
+`npm i --no-save @mdi/js && node docs/demo/icons.mjs` (add new ones to its list first).
+
 ### Publishing
 
 The sources live in `src/`, one card per file, with shared code in `src/shared/`. `npm run build`

@@ -1,0 +1,24 @@
+<!doctype html><meta charset="utf-8"><link rel="stylesheet" href="page.css">
+<script src="icons.js"></script><script src="common.js"></script><script src="../../dist/material-home-cards.js"></script>
+<div class="half dark"></div><div class="half light"></div>
+<script>
+const cover = (id, name, pos) => ({ entity_id: id, state: pos > 0 ? 'open' : 'closed', last_updated: '1',
+  attributes: { friendly_name: name, current_position: pos, supported_features: 15 } });
+const hass = fakeHass({
+  'cover.living': cover('cover.living', 'Living room', 60), 'cover.bedroom': cover('cover.bedroom', 'Bedroom', 0),
+  'sensor.b1': { entity_id: 'sensor.b1', state: '85', last_updated: '1', attributes: {} },
+  'sensor.b2': { entity_id: 'sensor.b2', state: '18', last_updated: '1', attributes: {} },
+});
+for (const half of document.querySelectorAll('.half')) {
+  [
+    { entity: 'cover.living', battery: 'sensor.b1', favorites: [{ position: 100, name: 'Open' },
+      { position: 60, name: 'Day', icon: 'mdi:weather-sunny' }, { position: 0, name: 'Night', icon: 'mdi:weather-night' }] },
+    { entity: 'cover.bedroom', battery: 'sensor.b2', color: 'teal' },
+  ].forEach((config) => {
+    const card = document.createElement('m3-cover-card');
+    card.setConfig({ type: 'custom:m3-cover-card', ...config });
+    half.appendChild(card);
+    card.hass = hass;
+  });
+}
+</script>
