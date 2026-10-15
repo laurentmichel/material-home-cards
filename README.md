@@ -22,6 +22,7 @@ and fall back to the Home Assistant colors otherwise.
 | Robot map (Dreame mower…) | `custom:m3-map-card` |
 | Weather and forecast | `custom:m3-weather-card` |
 | Task in progress (3D print, washing machine…) | `custom:m3-progress-card` |
+| Camera with no black screen while the live view connects | `custom:m3-camera-card` |
 | Button for any entity | `custom:m3-button-card` |
 | Popup opened by a `#hash` | `custom:m3-popup-card` |
 | Room: temperature, humidity, light and heating | `custom:m3-room-card` |
@@ -288,6 +289,22 @@ image: image.printer_model                # optional, thumbnail
 color: orange                             # optional
 ```
 
+## `m3-camera-card`
+
+Shows a camera without the black block of the native card while the live stream connects: the last image
+appears at once (kept on the device between visits), the live view connects behind it and fades in only once
+the video is actually playing. A chip shows "Connecting…" then "Live". Tapping opens the camera dialog.
+
+```yaml
+type: custom:m3-camera-card
+entity: camera.front_door
+name: Front door           # optional
+show_name: true            # optional, name chip at the top left (default false)
+live: true                 # optional (default true); false: the image is refreshed every 10 seconds
+fit_mode: cover            # optional: cover (default) or contain
+aspect_ratio: "16:9"       # optional, otherwise taken from the camera image
+```
+
 ## `m3-popup-card`
 
 <img src="https://raw.githubusercontent.com/laurentmichel/material-home-cards/main/docs/images/popup.png" alt="m3-popup-card" width="640">
@@ -448,7 +465,7 @@ visibility:
    `custom:m3-graph-card-dev`, `custom:m3-button-card-dev`, `custom:m3-popup-card-dev`, `custom:m3-room-card-dev`,
    `custom:m3-list-card-dev`, `custom:m3-scene-card-dev`, `custom:m3-multi-graph-card-dev`,
    `custom:m3-media-card-dev`, `custom:m3-person-card-dev`, `custom:m3-map-card-dev`,
-   `custom:m3-weather-card-dev`, `custom:m3-progress-card-dev` and `custom:m3-badge-dev`
+   `custom:m3-weather-card-dev`, `custom:m3-progress-card-dev`, `custom:m3-camera-card-dev` and `custom:m3-badge-dev`
 
 The `-dev` types coexist with the version installed by HACS, which stays untouched. Change the port with
 `PORT=5001 npm run dev`. If Home Assistant is opened over **https**, the browser blocks an http resource:
