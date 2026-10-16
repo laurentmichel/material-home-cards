@@ -1,5 +1,5 @@
-/*! Material Home Cards v1.19.3 — https://github.com/laurentmichel/material-home-cards */
-console.info('%c MATERIAL-HOME-CARDS %c v1.19.3 ', 'color:#fff;background:#6750a4;font-weight:700', 'color:#6750a4;background:#eaddff');
+/*! Material Home Cards v1.19.4 — https://github.com/laurentmichel/material-home-cards */
+console.info('%c MATERIAL-HOME-CARDS %c v1.19.4 ', 'color:#fff;background:#6750a4;font-weight:700', 'color:#6750a4;background:#eaddff');
 
 // ---- shared/color.js ----
 // Couleurs nommées de HA (amber, blue...) → variables du thème ; le reste (hex, rgb) tel quel.
@@ -3699,39 +3699,16 @@ button {
 }
 `;
 
-// Styles de la popup elle-même : elle est rendue à la racine de <home-assistant>, hors des conteneurs du tableau de bord.
-const POPUP_STYLE = `
-:host { position: fixed; inset: 0; z-index: 7; display: block; }
-.backdrop {
-  position: absolute; inset: 0; background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(var(--m3-blur)); -webkit-backdrop-filter: blur(var(--m3-blur));
-  opacity: 0; transition: opacity 250ms ease;
-}
+// Styles du panneau (en-tête, interrupteur, cartes), communs à la popup et à son aperçu dans l'éditeur.
+const SHEET_STYLE = `
 .sheet {
-  position: absolute; box-sizing: border-box; display: flex; flex-direction: column;
-  max-height: 90vh; overflow: hidden;
+  box-sizing: border-box; display: flex; flex-direction: column; overflow: hidden;
   background: var(--md-sys-color-surface-container-low, var(--ha-card-background, var(--card-background-color)));
   color: var(--md-sys-color-on-surface, var(--primary-text-color));
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-  transition: transform 300ms cubic-bezier(0.2, 0, 0, 1), opacity 250ms ease;
 }
-:host([mobile]) .sheet {
-  left: 50%; bottom: 0; width: var(--m3-width-mobile); max-height: 92vh;
-  border-radius: var(--m3-radius) var(--m3-radius) 0 0;
-  transform: translate(-50%, 100%);
-}
-:host(:not([mobile])) .sheet {
-  left: 50%; top: 50%; width: min(var(--m3-width-desktop), calc(100vw - 32px));
-  border-radius: var(--m3-radius);
-  transform: translate(-50%, -50%) scale(0.94); opacity: 0;
-}
-:host([open]) .backdrop { opacity: 1; }
-:host([open][mobile]) .sheet { transform: translate(-50%, var(--m3-drag, 0px)); }
-:host([open]:not([mobile])) .sheet { transform: translate(-50%, -50%); opacity: 1; }
-:host([dragging]) .sheet { transition: none; }
 .handle { display: none; width: 32px; height: 4px; border-radius: 2px; margin: 12px auto 0; flex: none;
   background: var(--md-sys-color-on-surface-variant, var(--secondary-text-color)); opacity: 0.4; }
-:host([mobile]) .handle { display: block; }
 .header { display: flex; align-items: center; gap: 12px; padding: 16px 16px 8px 24px; flex: none; touch-action: none; }
 :host([no-header]) .header { display: none; }
 .header .icon { --mdc-icon-size: 24px; flex: none; }
@@ -3760,8 +3737,53 @@ button {
 .switch[aria-checked='true'] { background: var(--md-sys-color-primary, var(--primary-color)); border-color: transparent; }
 .switch[aria-checked='true']::after { left: 22px; width: 24px; height: 24px; background: var(--md-sys-color-on-primary, #fff); }
 .body { overflow-y: auto; padding: 8px 16px 24px; display: flex; flex-direction: column; gap: 8px; overscroll-behavior: contain; }
+`;
+
+// Styles de la popup elle-même : elle est rendue à la racine de <home-assistant>, hors des conteneurs du tableau de bord.
+const POPUP_STYLE = `${SHEET_STYLE}
+:host { position: fixed; inset: 0; z-index: 7; display: block; }
+.backdrop {
+  position: absolute; inset: 0; background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(var(--m3-blur)); -webkit-backdrop-filter: blur(var(--m3-blur));
+  opacity: 0; transition: opacity 250ms ease;
+}
+.sheet {
+  position: absolute; max-height: 90vh;
+  transition: transform 300ms cubic-bezier(0.2, 0, 0, 1), opacity 250ms ease;
+}
+:host([mobile]) .sheet {
+  left: 50%; bottom: 0; width: var(--m3-width-mobile); max-height: 92vh;
+  border-radius: var(--m3-radius) var(--m3-radius) 0 0;
+  transform: translate(-50%, 100%);
+}
+:host(:not([mobile])) .sheet {
+  left: 50%; top: 50%; width: min(var(--m3-width-desktop), calc(100vw - 32px));
+  border-radius: var(--m3-radius);
+  transform: translate(-50%, -50%) scale(0.94); opacity: 0;
+}
+:host([open]) .backdrop { opacity: 1; }
+:host([open][mobile]) .sheet { transform: translate(-50%, var(--m3-drag, 0px)); }
+:host([open]:not([mobile])) .sheet { transform: translate(-50%, -50%); opacity: 1; }
+:host([dragging]) .sheet { transition: none; }
+:host([mobile]) .handle { display: block; }
 :host([mobile]) .body { padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); }
 `;
+
+// Aperçu dans la fenêtre d'édition de la carte : le panneau est affiché tel quel, à la place du repère.
+const EDITOR_PREVIEW_STYLE = `${SHEET_STYLE}
+:host { display: block; }
+.caption { ${STATE_FONT} text-align: center; margin-bottom: 8px; color: var(--md-sys-color-on-surface-variant, var(--secondary-text-color)); }
+.sheet { width: min(var(--m3-width-desktop), 100%); margin: 0 auto; border-radius: var(--m3-radius); }
+`;
+
+// La fenêtre d'édition de HA affiche l'aperçu de la carte dans .element-preview de <hui-dialog-edit-card>.
+// La popup elle-même s'ouvrirait derrière cette fenêtre : on y montre donc le panneau directement.
+function isInCardEditorPreview(el) {
+  for (let node = el; node; node = node.parentNode ?? node.host) {
+    if (node.localName === 'hui-dialog-edit-card' || node.classList?.contains('element-preview')) return true;
+  }
+  return false;
+}
 
 const isMobile = () => window.matchMedia('(max-width: 600px)').matches;
 
@@ -3917,12 +3939,14 @@ class M3PopupCard extends HTMLElement {
     this._settings = { close_by_clicking_outside: true, slide_to_close_distance: 100, ...config.settings };
     this._style = { width_desktop: 540, width_mobile: 100, border_radius: 28, backdrop_blur: 6, ...config.style };
     this._cards = null;
-    if (!this.shadowRoot) this._buildPlaceholder();
-    this._renderPlaceholder();
+    this._render();
     if (this._popup) { this._closeNow(); this._checkHash(); }
   }
 
-  getCardSize() { return this._preview ? 1 : 0; }
+  getCardSize() {
+    if (this._inEditor) return 2 + (this._config?.cards ?? []).length * 2;
+    return this._preview ? 1 : 0;
+  }
 
   getGridOptions() { return { columns: 'full', rows: 'auto' }; }
 
@@ -3937,10 +3961,18 @@ class M3PopupCard extends HTMLElement {
   set hass(hass) {
     this._hass = hass;
     if (this._cards) for (const card of this._cards) card.hass = hass;
-    if (this._popup) this._renderHeader();
+    if (this._previewCards) for (const card of this._previewCards) card.hass = hass;
+    if (this._popup) this._renderHeader(this._popup.shadowRoot);
+    if (this._mode === 'editor') this._renderHeader(this.shadowRoot);
   }
 
   connectedCallback() {
+    const inEditor = isInCardEditorPreview(this);
+    if (inEditor !== this._inEditor) {
+      this._inEditor = inEditor;
+      if (this._config) this._render();
+    }
+    if (inEditor) return;
     this._onLocation = () => this._checkHash();
     for (const type of ['hashchange', 'location-changed', 'popstate']) window.addEventListener(type, this._onLocation);
     // Après une navigation interne, location-changed peut précéder la mise à jour de l'URL.
@@ -3952,8 +3984,58 @@ class M3PopupCard extends HTMLElement {
     this._closeNow();
   }
 
+  _render() {
+    if (!this.shadowRoot) this.attachShadow({ mode: 'open' });
+    if (this._inEditor) {
+      this._renderEditorPreview();
+      return;
+    }
+    this._previewCards = null;
+    this.removeAttribute('no-header');
+    if (this._mode !== 'placeholder') this._buildPlaceholder();
+    this._renderPlaceholder();
+  }
+
+  // Panneau de la popup affiché dans l'aperçu de l'éditeur, reconstruit à chaque modification de la configuration.
+  async _renderEditorPreview() {
+    const root = this.shadowRoot;
+    this._mode = 'editor';
+    root.innerHTML = `<style>${EDITOR_PREVIEW_STYLE}</style>
+      <div class="caption"></div>
+      <div class="sheet">
+        <div class="header">
+          <ha-icon class="icon"></ha-icon>
+          <div class="title"><div class="name"></div><div class="state"></div></div>
+          <button class="switch" role="switch" aria-label="${t(this._hass, 'Turn on / off')}"></button>
+        </div>
+        <div class="body"></div>
+      </div>`;
+    this.style.setProperty('--m3-radius', `${Number(this._style.border_radius)}px`);
+    this.style.setProperty('--m3-width-desktop', `${Number(this._style.width_desktop)}px`);
+    this.toggleAttribute('no-header', !this._header.show_header);
+    root.querySelector('.caption').textContent = `Popup ${this._config.hash}`;
+    root.querySelector('.switch').addEventListener('click', () => this._toggleEntity());
+    this._renderHeader(root);
+    const config = this._config;
+    const helpers = await window.loadCardHelpers?.();
+    // Une modification plus récente a déjà relancé le rendu.
+    if (config !== this._config || this._mode !== 'editor') return;
+    this._previewCards = (config.cards ?? []).map((cardConfig) => {
+      const card = helpers ? helpers.createCardElement(cardConfig) : document.createElement('div');
+      card.hass = this._hass;
+      return card;
+    });
+    root.querySelector('.body').append(...this._previewCards);
+  }
+
+  _toggleEntity() {
+    this.dispatchEvent(new CustomEvent('haptic', { detail: 'light', bubbles: true, composed: true }));
+    this._hass?.callService('homeassistant', 'toggle', { entity_id: this._header.entity });
+  }
+
   _buildPlaceholder() {
-    const root = this.attachShadow({ mode: 'open' });
+    const root = this.shadowRoot;
+    this._mode = 'placeholder';
     root.innerHTML = `<style>${PLACEHOLDER_STYLE}</style>
       <ha-card>
         <ha-icon></ha-icon>
@@ -3972,6 +4054,7 @@ class M3PopupCard extends HTMLElement {
   }
 
   _checkHash() {
+    if (this._inEditor) return;
     const match = window.location.hash === this._config?.hash;
     if (match && !this._popup) this._open();
     else if (!match && this._popup && !this._manual) this._close(false);
@@ -4040,10 +4123,7 @@ class M3PopupCard extends HTMLElement {
       if (fromBackdrop && this._settings.close_by_clicking_outside) this._close();
     });
     root.querySelector('.close').addEventListener('click', () => this._close());
-    root.querySelector('.switch').addEventListener('click', () => {
-      this.dispatchEvent(new CustomEvent('haptic', { detail: 'light', bubbles: true, composed: true }));
-      this._hass?.callService('homeassistant', 'toggle', { entity_id: this._header.entity });
-    });
+    root.querySelector('.switch').addEventListener('click', () => this._toggleEntity());
     this._setupDrag(root.querySelector('.header'), root.querySelector('.handle'));
     this._onKey = (e) => { if (e.key === 'Escape') this._close(); };
     window.addEventListener('keydown', this._onKey);
@@ -4051,7 +4131,7 @@ class M3PopupCard extends HTMLElement {
     // Dans l'arbre de <home-assistant>, comme les dialogues natifs : les composants HA (ha-camera-stream...)
     // y trouvent les données qu'ils demandent par contexte. Dans document.body, le flux vidéo ne démarre pas.
     (document.querySelector('home-assistant')?.shadowRoot ?? document.body).appendChild(popup);
-    this._renderHeader();
+    this._renderHeader(root);
     const body = root.querySelector('.body');
     for (const card of await this._createCards()) body.appendChild(card);
 
@@ -4064,9 +4144,7 @@ class M3PopupCard extends HTMLElement {
     }
   }
 
-  _renderHeader() {
-    const root = this._popup?.shadowRoot;
-    if (!root) return;
+  _renderHeader(root) {
     const h = this._header;
     const stateObj = h.entity ? this._hass?.states[h.entity] : undefined;
     const icon = root.querySelector('.header .icon');
