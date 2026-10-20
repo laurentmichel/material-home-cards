@@ -1,12 +1,13 @@
 // m3-room-card — carte pièce Material 3 : nom, icône, température et humidité de la pièce.
 // Le fond prend la couleur pastel de la lumière quand elle est allumée, l'icône devient une flamme rouge quand le chauffage est en marche.
+// Avec un volet, son état (fermé, ouvert, position) s'affiche en bas à droite.
 const STYLE = `
 :host { display: block; height: 100%; }
 ha-card {
   position: relative; overflow: hidden; height: 100%; min-height: 130px; box-sizing: border-box;
   border-radius: 28px; border: none; box-shadow: none;
   background: var(--m3-bg); color: var(--m3-fg);
-  display: flex; flex-direction: column; justify-content: space-between; padding: 16px 16px 16px 20px;
+  display: flex; flex-direction: column; justify-content: space-between; padding: 16px 20px;
   cursor: pointer; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent;
   transition: background 300ms ease, color 300ms ease, transform 120ms ease;
 }
@@ -20,10 +21,17 @@ ha-card:active { transform: scale(0.98); }
   flex: none; display: flex; --mdc-icon-size: 24px;
   color: var(--m3-icon-fg); transition: color 300ms ease;
 }
-.climate { display: flex; align-items: baseline; gap: 6px; }
+.bottom { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.climate { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
 .temp { font-size: 2.4rem; font-weight: 400; line-height: 1; letter-spacing: -0.5px; }
 .hum { ${STATE_FONT} }
-:host([no-climate]) .climate { display: none; }
+:host([no-climate]) .climate { visibility: hidden; }
+:host([no-climate]:not([has-cover])) .bottom { display: none; }
+.cover { ${STATE_FONT} flex: none; display: flex; align-items: baseline; gap: 4px; --mdc-icon-size: 18px; white-space: nowrap; }
+:host(:not([has-cover])) .cover { display: none; }
+/* L'icône est centrée sur le texte, qui seul donne la ligne de base : il s'aligne ainsi sur l'humidité. */
+.cover ha-icon { display: flex; align-self: center; }
+.cover span { line-height: 18px; }
 `;
 
 const SURFACE = 'var(--md-sys-color-surface-container-high, var(--ha-card-background, var(--card-background-color)))';
@@ -43,6 +51,7 @@ class M3RoomCardEditor extends M3CardEditor {
     },
     { name: 'light', selector: { entity: { domain: 'light' } } },
     { name: 'climate', selector: { entity: { domain: 'climate' } } },
+    { name: 'cover', selector: { entity: { domain: 'cover' } } },
     {
       type: 'grid', name: '', schema: [
         { name: 'temperature', selector: { entity: { domain: 'sensor', device_class: 'temperature' } } },
@@ -58,13 +67,14 @@ class M3RoomCardEditor extends M3CardEditor {
   ];
 
   static labels = {
-    name: 'Name', icon: 'Icon', light: 'Light', climate: 'Thermostat',
+    name: 'Name', icon: 'Icon', light: 'Light', climate: 'Thermostat', cover: 'Shutter',
     temperature: 'Temperature', humidity: 'Humidity', tap_action: 'Tap', hold_action: 'Long press',
   };
 
   static helpers = {
     light: 'The background takes its color when it is on',
     climate: 'The icon becomes a flame while the heating is on; its temperature is used when no sensor is set',
+    cover: 'Shows whether it is closed or open',
     tap_action: 'For example "Navigate" to #living-room to open a popup. Empty: more-info dialog',
     hold_action: 'Empty: turn the light on / off',
   };
@@ -99,7 +109,7 @@ class M3RoomCard extends HTMLElement {
     this._hass = hass;
     const c = this._config;
     // Ne redessine que si une des entités de la pièce a changé.
-    const watched = [c.light, c.climate, c.temperature, c.humidity].map((e) => e && hass.states[e]);
+    const watched = [c.light, c.climate, c.temperature, c.humidity, c.cover].map((e) => e && hass.states[e]);
     if (this._watched && watched.every((s, i) => s === this._watched[i])) return;
     this._watched = watched;
     this._render();
@@ -110,7 +120,10 @@ class M3RoomCard extends HTMLElement {
     root.innerHTML = `<style>${STYLE}</style>
       <ha-card>
         <div class="top"><div class="icon"><ha-icon></ha-icon></div><div class="name"></div></div>
-        <div class="climate"><span class="temp"></span><span class="hum"></span></div>
+        <div class="bottom">
+          <div class="climate"><span class="temp"></span><span class="hum"></span></div>
+          <div class="cover"><ha-icon></ha-icon><span></span></div>
+        </div>
       </ha-card>`;
     this._card = root.querySelector('ha-card');
     this._els = {
@@ -118,6 +131,8 @@ class M3RoomCard extends HTMLElement {
       icon: root.querySelector('ha-icon'),
       temp: root.querySelector('.temp'),
       hum: root.querySelector('.hum'),
+      coverIcon: root.querySelector('.cover ha-icon'),
+      coverText: root.querySelector('.cover span'),
     };
     this._card.addEventListener('pointerdown', (e) => this._onDown(e));
     this._card.addEventListener('pointerup', () => this._onUp());
@@ -148,6 +163,14 @@ class M3RoomCard extends HTMLElement {
     this._els.hum.textContent = hum != null ? `${this._number(hum)} %` : '';
     this.toggleAttribute('no-climate', temp == null && hum == null);
 
+    const cover = c.cover && states[c.cover];
+    this.toggleAttribute('has-cover', !!cover);
+    if (cover) {
+      const [icon, text] = this._coverState(cover);
+      this._els.coverIcon.icon = icon;
+      this._els.coverText.textContent = text;
+    }
+
     // Chauffage en marche : le thermostat n'est pas éteint, même s'il ne chauffe pas à cet instant.
     const heating = climate && !['off', 'unavailable', 'unknown'].includes(climate.state);
     this._els.icon.icon = heating ? 'mdi:fire' : c.icon ?? 'mdi:home-outline';
@@ -166,6 +189,17 @@ class M3RoomCard extends HTMLElement {
     // Chauffage en marche : la flamme prend la couleur d'erreur du thème (rouge), plus foncée sur un fond clair.
     const heat = fg === '#1c1b1f' ? '#ba1a1a' : 'var(--md-sys-color-error, #ffb4ab)';
     st.setProperty('--m3-icon-fg', heating ? heat : fg);
+  }
+
+  // Volet : fermé, ouvert, ou sa position quand il est entrouvert.
+  _coverState(s) {
+    const position = s.attributes.current_position;
+    if (s.state === 'opening') return ['mdi:arrow-up', t(this._hass, 'Opening…')];
+    if (s.state === 'closing') return ['mdi:arrow-down', t(this._hass, 'Closing…')];
+    if (position > 0 && position < 100) return ['mdi:window-shutter-open', `${Math.round(position)} %`];
+    if (s.state === 'open') return ['mdi:window-shutter-open', t(this._hass, 'Opened')];
+    if (s.state === 'closed') return ['mdi:window-shutter', t(this._hass, 'Closed')];
+    return ['mdi:window-shutter-alert', this._hass.formatEntityState?.(s) ?? s.state];
   }
 
   _onDown(e) {

@@ -387,6 +387,7 @@ YAML editor.
 
 A room: icon and name, large temperature with humidity next to it. The background takes the light's pastel color
 when it is on, and the icon becomes a red flame while the heating is on (thermostat in any mode other than off).
+With a shutter, its state shows at the bottom right: closed, open, its position when half-open, or opening / closing.
 Long press: turn the light on / off. With a "Navigate" action to a `#hash`, a tap opens the room's popup.
 
 ```yaml
@@ -397,6 +398,7 @@ light: light.living_room                          # optional, background color
 climate: climate.living_room                      # optional, flame while the heating is on
 temperature: sensor.living_room_temperature       # optional, otherwise the thermostat's
 humidity: sensor.living_room_humidity             # optional
+cover: cover.living_room                          # optional, closed / open / position
 tap_action:                                       # optional, otherwise the more-info dialog
   action: navigate
   navigation_path: '#living-room'
