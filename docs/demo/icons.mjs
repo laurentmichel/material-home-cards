@@ -6,7 +6,7 @@ import * as mdi from '@mdi/js';
 const ICONS = [
   'arrow-up', 'stop', 'arrow-down', 'battery', 'battery-20', 'battery-80', 'battery-90', 'battery-10',
   'weather-sunny', 'weather-night', 'cctv', 'brightness-5', 'sofa-outline', 'movie-open-outline',
-  'party-popper', 'circle-outline',
+  'party-popper', 'circle-outline', 'calendar-blank-outline', 'calendar-check-outline',
 ];
 
 const camel = (name) => `mdi${name.split('-').map((p) => p[0].toUpperCase() + p.slice(1)).join('')}`;

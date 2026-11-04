@@ -1,0 +1,36 @@
+<!doctype html><meta charset="utf-8"><link rel="stylesheet" href="page.css">
+<script src="icons.js"></script><script src="common.js"></script><script src="../../dist/material-home-cards.js"></script>
+<div class="half dark"></div><div class="half light"></div>
+<script>
+// Événements fictifs relatifs à maintenant : un en cours, le reste aujourd'hui, demain et dans les jours qui suivent.
+const day = new Date();
+day.setHours(0, 0, 0, 0);
+const at = (d, h, m = 0) => new Date(day.getTime() + d * 864e5 + (h * 60 + m) * 6e4).toISOString();
+const now = new Date();
+const allDay = (d) => {
+  const x = new Date(day.getTime() + d * 864e5);
+  return { date: `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}` };
+};
+const EVENTS = {
+  'calendar.movies': [
+    { summary: 'The Grand Budapest Hotel', start: allDay(1), end: allDay(2) },
+    { summary: 'Dune: Part Three', start: { dateTime: at(4, 0) }, end: { dateTime: at(4, 23, 59) } },
+  ],
+  'calendar.series': [
+    { summary: 'Shōgun - S02E04', start: { dateTime: new Date(now - 20 * 6e4).toISOString() }, end: { dateTime: new Date(+now + 40 * 6e4).toISOString() } },
+    { summary: 'House of the Dragon - S03E06', start: { dateTime: at(0, 23, 0) }, end: { dateTime: at(0, 23, 59) } },
+    { summary: 'Bleach - S17E51', start: { dateTime: at(1, 17, 30) }, end: { dateTime: at(1, 18, 0) } },
+    { summary: 'Severance - S03E02', start: { dateTime: at(3, 9, 0) }, end: { dateTime: at(3, 10, 0) } },
+  ],
+};
+const states = {
+  'calendar.movies': { entity_id: 'calendar.movies', state: 'off', last_updated: '1', attributes: { friendly_name: 'Movies' } },
+  'calendar.series': { entity_id: 'calendar.series', state: 'on', last_updated: '1', attributes: { friendly_name: 'Series' } },
+};
+for (const half of document.querySelectorAll('.half')) {
+  const card = document.createElement('m3-calendar-card');
+  card.setConfig({ type: 'custom:m3-calendar-card', entities: [{ entity: 'calendar.movies', color: 'orange' }, { entity: 'calendar.series', color: 'purple' }], days: 7 });
+  half.appendChild(card);
+  card.hass = { ...fakeHass(states), callApi: async (_m, path) => EVENTS[path.split('?')[0].replace('calendars/', '')] ?? [] };
+}
+</script>

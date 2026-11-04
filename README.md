@@ -21,6 +21,7 @@ and fall back to the Home Assistant colors otherwise.
 | "Good morning" greeting with people | `custom:m3-person-card` |
 | Robot map (Dreame mower…) | `custom:m3-map-card` |
 | Weather and forecast | `custom:m3-weather-card` |
+| Upcoming events from calendars | `custom:m3-calendar-card` |
 | Task in progress (3D print, washing machine…) | `custom:m3-progress-card` |
 | Camera with no black screen while the live view connects | `custom:m3-camera-card` |
 | Roller shutter (Somfy TaHoma, solar shutters…) | `custom:m3-cover-card` |
@@ -273,6 +274,29 @@ forecast_type: hourly    # optional: hourly (default), daily or none
 forecast_slots: 8        # optional, number of forecast slots
 ```
 
+## `m3-calendar-card`
+
+<img src="https://raw.githubusercontent.com/laurentmichel/material-home-cards/main/docs/images/calendar.png" alt="m3-calendar-card" width="880">
+
+Upcoming events from one or more calendars (Radarr, Sonarr, Google Calendar, local calendar…), grouped by day:
+"Today", "Tomorrow", then the date. Each calendar has its own color, shown in the chip on the left (start time, or
+an icon for all-day events); the event in progress is tinted and marked "Now". The list is refreshed every 15
+minutes and as soon as a calendar changes. Tapping an event opens the calendar's more-info dialog.
+
+```yaml
+type: custom:m3-calendar-card
+entities:
+  - entity: calendar.radarr
+    name: Movies         # optional, otherwise the calendar's name
+    color: orange        # optional: HA or CSS color; default: primary, tertiary, secondary… of the theme
+  - calendar.sonarr      # or simply the entity id
+title: Coming up         # optional
+days: 7                  # optional, 1 to 60 days ahead (default 7)
+max_events: 10           # optional (default 10)
+show_calendar: true      # optional, calendar name after the time (default true)
+radius: large            # optional: small, medium, large (default) or a number of px
+```
+
 ## `m3-progress-card`
 
 <img src="https://raw.githubusercontent.com/laurentmichel/material-home-cards/main/docs/images/progress.png" alt="m3-progress-card" width="880">
@@ -497,7 +521,7 @@ visibility:
    `custom:m3-graph-card-dev`, `custom:m3-button-card-dev`, `custom:m3-popup-card-dev`, `custom:m3-room-card-dev`,
    `custom:m3-list-card-dev`, `custom:m3-scene-card-dev`, `custom:m3-multi-graph-card-dev`,
    `custom:m3-media-card-dev`, `custom:m3-person-card-dev`, `custom:m3-map-card-dev`,
-   `custom:m3-weather-card-dev`, `custom:m3-progress-card-dev`, `custom:m3-camera-card-dev`, `custom:m3-cover-card-dev` and `custom:m3-badge-dev`
+   `custom:m3-weather-card-dev`, `custom:m3-calendar-card-dev`, `custom:m3-progress-card-dev`, `custom:m3-camera-card-dev`, `custom:m3-cover-card-dev` and `custom:m3-badge-dev`
 
 The `-dev` types coexist with the version installed by HACS, which stays untouched. Change the port with
 `PORT=5001 npm run dev`. If Home Assistant is opened over **https**, the browser blocks an http resource:
