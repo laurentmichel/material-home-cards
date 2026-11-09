@@ -1,5 +1,5 @@
-/*! Material Home Cards v1.22.0 — https://github.com/laurentmichel/material-home-cards */
-console.info('%c MATERIAL-HOME-CARDS %c v1.22.0 ', 'color:#fff;background:#6750a4;font-weight:700', 'color:#6750a4;background:#eaddff');
+/*! Material Home Cards v1.23.0 — https://github.com/laurentmichel/material-home-cards */
+console.info('%c MATERIAL-HOME-CARDS %c v1.23.0 ', 'color:#fff;background:#6750a4;font-weight:700', 'color:#6750a4;background:#eaddff');
 
 // ---- shared/color.js ----
 // Couleurs nommées de HA (amber, blue...) → variables du thème ; le reste (hex, rgb) tel quel.
@@ -329,7 +329,7 @@ const FR = {
   "On": "Marche",
   "On / off": "Allumé / éteint",
   "On the right": "À droite",
-  "On the right, \"Automatic\": a switch for things that turn on, a chevron for navigation": "À droite, « Automatique » : interrupteur pour ce qui s’allume, flèche pour une navigation",
+  "On the right, \"Automatic\": a switch for things that turn on, a slider for numbers, a chevron for navigation": "À droite, « Automatique » : interrupteur pour ce qui s’allume, curseur pour un nombre, flèche pour une navigation",
   "Open": "Ouvrir",
   "Open at {pct} %": "Ouvert à {pct} %",
   "Opened": "Ouvert",
@@ -361,6 +361,7 @@ const FR = {
   "Scenes": "Scènes",
   "Sensor": "Capteur",
   "Sensors": "Capteurs",
+  "Slider": "Curseur",
   "Settings": "Réglages",
   "Several sensors on one graph (e.g. indoor / outdoor temperature), with an optional difference or min / max": "Plusieurs capteurs sur un même graphique (ex. température dedans / dehors), écart ou min / max en option",
   "Show the calendar name": "Afficher le nom du calendrier",
@@ -2509,13 +2510,39 @@ ha-card { background: none; border: none; box-shadow: none; }
 }
 .switch[on] { background: var(--md-sys-color-primary, var(--primary-color)); border-color: transparent; }
 .switch[on]::after { left: 22px; width: 24px; height: 24px; background: var(--md-sys-color-on-primary, #fff); }
+
+/* Curseur Material 3 Expressive : piste épaisse, poignée en barre verticale séparée de la piste par un espace. */
+.slider {
+  position: relative; height: 32px; margin: 6px 0 -2px; touch-action: none; cursor: pointer; outline: none;
+  --m3-p: 0%; --m3-gap: 6px;
+}
+.slider[hidden] { display: none; }
+.slider .active, .slider .inactive { position: absolute; top: 8px; height: 16px; box-sizing: border-box; }
+.slider .active {
+  left: 0; width: max(0px, calc(var(--m3-p) - var(--m3-gap))); border-radius: 8px 2px 2px 8px;
+  background: var(--md-sys-color-primary, var(--primary-color));
+}
+.slider .inactive {
+  left: calc(var(--m3-p) + var(--m3-gap)); right: 0; border-radius: 2px 8px 8px 2px;
+  background: var(--md-sys-color-secondary-container, rgba(127, 127, 127, 0.25));
+}
+.slider .handle {
+  position: absolute; top: 0; left: var(--m3-p); width: 4px; height: 32px; border-radius: 2px; transform: translateX(-50%);
+  background: var(--md-sys-color-primary, var(--primary-color)); transition: width 120ms ease;
+}
+.slider[dragging] .handle, .slider:focus-visible .handle { width: 2px; }
+.slider:not([dragging]) .handle, .slider:not([dragging]) .active, .slider:not([dragging]) .inactive {
+  transition: left 200ms cubic-bezier(0.2, 0, 0, 1), width 200ms cubic-bezier(0.2, 0, 0, 1);
+}
+.row[offline] .slider { pointer-events: none; }
 `;
 
 const SURFACE = 'var(--md-sys-color-surface-container-high, var(--ha-card-background, var(--card-background-color)))';
 const ON_SURFACE = 'var(--md-sys-color-on-surface, var(--primary-text-color))';
 const HOLD_MS = 500;
 const RADIUS = { small: 12, medium: 20, large: 28 };
-const TRAILING = ['auto', 'state', 'switch', 'chevron', 'none'];
+const TRAILING = ['auto', 'state', 'switch', 'slider', 'chevron', 'none'];
+const SLIDER_DOMAINS = new Set(['input_number', 'number']);
 
 class M3ListCardEditor extends M3CardEditor {
   static schema = [
@@ -2547,7 +2574,7 @@ class M3ListCardEditor extends M3CardEditor {
             trailing: {
               label: 'On the right', selector: {
                 select: { mode: 'dropdown', options: [
-                  { value: 'auto', label: 'Automatic' }, { value: 'switch', label: 'Switch' },
+                  { value: 'auto', label: 'Automatic' }, { value: 'switch', label: 'Switch' }, { value: 'slider', label: 'Slider' },
                   { value: 'state', label: 'State' }, { value: 'chevron', label: 'Chevron' }, { value: 'none', label: 'Nothing' },
                 ] },
               },
@@ -2563,7 +2590,7 @@ class M3ListCardEditor extends M3CardEditor {
   static labels = { title: 'Title', radius: 'Corners', dynamic: 'Tint active rows', rows: 'Rows' };
 
   static helpers = {
-    rows: 'On the right, "Automatic": a switch for things that turn on, a chevron for navigation',
+    rows: 'On the right, "Automatic": a switch for things that turn on, a slider for numbers, a chevron for navigation',
   };
 }
 
@@ -2623,7 +2650,8 @@ class M3ListCard extends HTMLElement {
       const el = document.createElement('div');
       el.className = 'row';
       el.innerHTML = `<div class="icon"><ha-state-icon></ha-state-icon></div>
-        <div class="text"><div class="name"></div><div class="label"></div></div>
+        <div class="text"><div class="name"></div><div class="label"></div>
+          <div class="slider" role="slider" tabindex="0" hidden><div class="active"></div><div class="inactive"></div><div class="handle"></div></div></div>
         <div class="trailing"></div>`;
       list.appendChild(el);
       const r = {
@@ -2632,8 +2660,10 @@ class M3ListCard extends HTMLElement {
         name: el.querySelector('.name'),
         label: el.querySelector('.label'),
         trailing: el.querySelector('.trailing'),
+        slider: el.querySelector('.slider'),
       };
       this._bindPress(r);
+      this._bindSlider(r);
       return r;
     });
     this._watched = null;
@@ -2656,13 +2686,16 @@ class M3ListCard extends HTMLElement {
     Object.assign(r.icon, { hass: this._hass, stateObj: s, icon: row.icon });
     // Sous-titre : celui de la config, sinon l'état (sauf s'il est déjà affiché à droite).
     const custom = (active ? row.label_on : offline ? null : row.label_off) ?? row.label;
-    r.label.textContent = custom ?? (trailing === 'state' ? '' : this._stateText(s, offline) ?? '');
+    r.label.textContent = custom ?? (['state', 'slider'].includes(trailing) ? '' : this._stateText(s, offline) ?? '');
+    r.slider.hidden = trailing !== 'slider';
+    if (trailing === 'slider' && !r.dragging) this._setSlider(r, parseFloat(s?.state));
 
     if (r.kind !== trailing) {
       r.kind = trailing;
       r.trailing.innerHTML = {
         switch: '<div class="switch" role="switch"></div>',
         state: '<span class="state"></span>',
+        slider: '<span class="state"></span>',
         chevron: '<ha-icon class="chevron" icon="mdi:chevron-right"></ha-icon>',
         none: '',
       }[trailing];
@@ -2685,7 +2718,7 @@ class M3ListCard extends HTMLElement {
       r.switch.setAttribute('aria-checked', String(active));
     }
     const stateEl = r.trailing.querySelector('.state');
-    if (stateEl) stateEl.textContent = this._stateText(s, offline) ?? '';
+    if (stateEl && !r.dragging) stateEl.textContent = this._stateText(s, offline) ?? '';
 
     const tinted = active && this._config.dynamic !== false;
     const st = r.el.style;
@@ -2708,6 +2741,7 @@ class M3ListCard extends HTMLElement {
     const action = row.tap_action?.action;
     if (action === 'navigate' || action === 'url') return 'chevron';
     const domain = row.entity?.split('.')[0];
+    if (s && SLIDER_DOMAINS.has(domain) && !action) return 'slider';
     if (s && TOGGLE_DOMAINS.has(domain) && domain !== 'cover' && (!action || action === 'toggle')) return 'switch';
     return 'none';
   }
@@ -2724,6 +2758,89 @@ class M3ListCard extends HTMLElement {
       return `${state} • ${Math.round((s.attributes.brightness / 255) * 100)} %`;
     }
     return state;
+  }
+
+  // Bornes du curseur : celles de l'entité (min, max, step), sinon 0–100 par pas de 1.
+  _range(r) {
+    const a = this._hass?.states[r.row.entity]?.attributes ?? {};
+    const min = Number(a.min ?? 0);
+    const max = Number(a.max ?? 100);
+    const step = Number(a.step) > 0 ? Number(a.step) : 1;
+    return { min, max: max > min ? max : min + 1, step, unit: a.unit_of_measurement };
+  }
+
+  _setSlider(r, value) {
+    const { min, max } = this._range(r);
+    const v = isNaN(value) ? min : Math.min(max, Math.max(min, value));
+    r.slider.style.setProperty('--m3-p', `${((v - min) / (max - min)) * 100}%`);
+    r.slider.setAttribute('aria-valuemin', String(min));
+    r.slider.setAttribute('aria-valuemax', String(max));
+    r.slider.setAttribute('aria-valuenow', String(v));
+  }
+
+  // Valeur affichée à droite pendant le glissement, au format de la langue.
+  _showValue(r, value) {
+    const { step, unit } = this._range(r);
+    const decimals = (String(step).split('.')[1] ?? '').length;
+    const lang = this._hass?.locale?.language ?? this._hass?.language;
+    const text = value.toLocaleString(lang, { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+    const stateEl = r.trailing.querySelector('.state');
+    if (stateEl) stateEl.textContent = unit ? `${text} ${unit}` : text;
+  }
+
+  _commit(r, value) {
+    const [domain] = r.row.entity.split('.');
+    this._fire('haptic', 'light');
+    this._hass.callService(domain, 'set_value', { entity_id: r.row.entity, value });
+  }
+
+  _bindSlider(r) {
+    const el = r.slider;
+    const valueAt = (x) => {
+      const { min, max, step } = this._range(r);
+      const box = el.getBoundingClientRect();
+      const ratio = Math.min(1, Math.max(0, (x - box.left) / (box.width || 1)));
+      const v = min + Math.round((ratio * (max - min)) / step) * step;
+      return Number(Math.min(max, Math.max(min, v)).toFixed(6));
+    };
+    const move = (e) => {
+      r.value = valueAt(e.clientX);
+      this._setSlider(r, r.value);
+      this._showValue(r, r.value);
+    };
+    // Le curseur ne déclenche jamais l'appui de la ligne.
+    el.addEventListener('pointerdown', (e) => {
+      e.stopPropagation();
+      if (e.button !== 0 || r.el.hasAttribute('offline')) return;
+      r.dragging = true;
+      r.start = parseFloat(this._hass.states[r.row.entity]?.state);
+      el.setAttribute('dragging', '');
+      el.setPointerCapture?.(e.pointerId);
+      move(e);
+    });
+    el.addEventListener('pointermove', (e) => { if (r.dragging) move(e); });
+    const end = (e, cancelled) => {
+      e.stopPropagation();
+      if (!r.dragging) return;
+      r.dragging = false;
+      el.removeAttribute('dragging');
+      if (!cancelled && r.value !== undefined && r.value !== r.start) this._commit(r, r.value);
+      else this._renderRow(r);
+    };
+    el.addEventListener('pointerup', (e) => end(e, false));
+    el.addEventListener('pointercancel', (e) => end(e, true));
+    el.addEventListener('click', (e) => e.stopPropagation());
+    el.addEventListener('keydown', (e) => {
+      const { min, max, step } = this._range(r);
+      const now = parseFloat(this._hass.states[r.row.entity]?.state);
+      const delta = { ArrowRight: step, ArrowUp: step, ArrowLeft: -step, ArrowDown: -step }[e.key];
+      if (delta === undefined || isNaN(now)) return;
+      e.preventDefault();
+      const v = Number(Math.min(max, Math.max(min, now + delta)).toFixed(6));
+      this._setSlider(r, v);
+      this._showValue(r, v);
+      if (v !== now) this._commit(r, v);
+    });
   }
 
   _bindPress(r) {

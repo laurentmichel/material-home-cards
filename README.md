@@ -440,11 +440,12 @@ hold_action:                                      # optional, otherwise toggle t
 <img src="https://raw.githubusercontent.com/laurentmichel/material-home-cards/main/docs/images/list.png" alt="m3-list-card" width="880">
 
 A Material 3 Expressive list, like Android settings: stacked rows forming a block with large rounded corners.
-Each row has an icon, a title, a subtitle (the entity state by default) and, on the right, a switch, the state or
-a chevron. An active row is tinted with the primary color.
+Each row has an icon, a title, a subtitle (the entity state by default) and, on the right, a switch, the state, a
+slider or a chevron. An active row is tinted with the primary color.
 
-On the right, `auto` picks a switch for things that turn on (light, plug…) and a chevron for a "Navigate" or
-"URL" action. Tapping runs the entity's default action (like `m3-button-card`); a long press opens the more-info
+On the right, `auto` picks a switch for things that turn on (light, plug…), a slider for numbers (`input_number`,
+`number`: the value on the right and a Material 3 slider under the title, within the entity's min, max and step)
+and a chevron for a "Navigate" or "URL" action. Tapping runs the entity's default action (like `m3-button-card`); a long press opens the more-info
 dialog.
 
 ```yaml
@@ -465,7 +466,8 @@ rows:
     trailing: state
     alert_below: 20              # row in alert colors below this value
   - entity: sensor.house_temperature
-    trailing: state              # auto, switch, state, chevron or none
+    trailing: state              # auto, switch, state, slider, chevron or none
+  - entity: input_number.cutting_height   # slider (automatic for numbers)
   - name: Office
     icon: mdi:desktop-tower-monitor
     tap_action:
