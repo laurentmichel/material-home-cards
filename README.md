@@ -246,18 +246,23 @@ background: false        # optional, card background (default false)
 
 <img src="https://raw.githubusercontent.com/laurentmichel/material-home-cards/main/docs/images/map.png" alt="m3-map-card" width="880">
 
-A robot's map redrawn in Material 3 colors. When the map camera provides an SVG (as the Dreame Mower integration
-does), the card removes the background, title and legend, recolors the lawn, mowing path, obstacles and robot
-position, then crops to the area. Any other image is shown as is, with rounded corners. A chip can show the
-robot's state and battery.
+A robot's map redrawn in Material 3 colors, with a chip for the robot's state and battery.
+
+- **Dreame Mower 2.x** (`lawn_mower` entity): the card subscribes to the integration's live vector map and draws it
+  with the theme's tokens: lawns, paths between zones, no-go and ignore-obstacle areas, obstacles, station and the
+  mower with its heading; while it mows, the zone in progress is dashed and the mowed lanes are drawn on the lawn.
+- **Map camera** (Dreame Mower 1.x, other robots): when the camera provides an SVG, the card removes the background,
+  title and legend, recolors the lawn, mowing path, obstacles and robot position, then crops to the area. Any other
+  image is shown as is, with rounded corners.
 
 ```yaml
 type: custom:m3-map-card
-entity: camera.mower_map
-mower: lawn_mower.mower          # optional, state in the chip
+entity: lawn_mower.mower         # or a map camera: camera.mower_map
+mower: lawn_mower.mower          # optional, state in the chip (defaults to the entity when it is a mower)
 battery: sensor.mower_battery    # optional
 lawn_color: '#6abf69'            # optional
 height: 360                      # optional, maximum height in px
+show_trail: true                 # optional, mowed lanes while mowing (Dreame Mower 2.x)
 ```
 
 ## `m3-weather-card`
