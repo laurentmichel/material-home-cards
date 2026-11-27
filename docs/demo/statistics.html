@@ -1,0 +1,31 @@
+<!doctype html><meta charset="utf-8"><link rel="stylesheet" href="page.css">
+<script src="icons.js"></script><script src="common.js"></script><script src="../../dist/material-home-cards.js"></script>
+<div class="half dark"></div><div class="half light"></div>
+<script>
+// Consommation fictive par jour sur 7 jours : heures creuses / pleines, aujourd'hui encore en cours.
+const OFFPEAK = [9.8, 11.2, 8.4, 12.6, 10.1, 9.3, 4.7];
+const PEAK = [6.1, 7.4, 5.2, 8.9, 6.6, 7.8, 3.2];
+const day = new Date();
+day.setHours(0, 0, 0, 0);
+const rows = (values) => values.map((change, i) => ({ start: day.getTime() - (values.length - 1 - i) * 864e5, change }));
+const states = {
+  'sensor.energy_offpeak': { entity_id: 'sensor.energy_offpeak', state: '18245.3', last_updated: '1', attributes: { unit_of_measurement: 'kWh', friendly_name: 'Off-peak' } },
+  'sensor.energy_peak': { entity_id: 'sensor.energy_peak', state: '12890.7', last_updated: '1', attributes: { unit_of_measurement: 'kWh', friendly_name: 'Peak' } },
+};
+for (const half of document.querySelectorAll('.half')) {
+  const card = document.createElement('m3-statistics-card');
+  card.setConfig({
+    type: 'custom:m3-statistics-card',
+    entities: [
+      { entity: 'sensor.energy_offpeak', name: 'Off-peak', icon: 'mdi:weather-night', color: 'purple' },
+      { entity: 'sensor.energy_peak', name: 'Peak', icon: 'mdi:weather-sunny', color: 'orange' },
+    ],
+  });
+  half.appendChild(card);
+  card.hass = {
+    ...fakeHass(states),
+    callWS: async () => ({ 'sensor.energy_offpeak': rows(OFFPEAK), 'sensor.energy_peak': rows(PEAK) }),
+    formatEntityState: (s, v) => `${Number(v).toFixed(1)} ${s.attributes.unit_of_measurement}`,
+  };
+}
+</script>

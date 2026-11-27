@@ -1,11 +1,11 @@
-// Assemble les cartes de src/ en un seul module dist/material-home-cards.js (fichier chargé par HACS).
+// Assemble les cartes de src/ en un seul module dist/material-home-cards.js (fichier chargé par le Marketplace).
 // Aucune dépendance : `node build.mjs`. Le serveur de dev (dev.mjs) réutilise bundle().
 import { readFileSync, readdirSync, writeFileSync, mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 const listJs = (dir) => readdirSync(dir).filter((f) => f.endsWith('.js')).sort();
 
-// En dev, chaque élément prend le suffixe -dev pour cohabiter avec la version installée par HACS.
+// En dev, chaque élément prend le suffixe -dev pour cohabiter avec la version installée par le Marketplace.
 const toDev = (code) => code
   .replace(/'(m3-(?:[a-z-]+?-card|badge)(?:-editor)?)'/g, "'$1-dev'")
   .replace(/name: '(M3 [^']+)'/g, "name: '$1 (dev)'");

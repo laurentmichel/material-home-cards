@@ -32,13 +32,16 @@ and fall back to the Home Assistant colors otherwise.
 | Settings list (stacked rows) | `custom:m3-list-card` |
 | Badge for the top of views | `custom:m3-badge` |
 
-## Installation (HACS)
+## Installation (Marketplace)
 
-1. HACS → ⋮ menu → **Custom repositories**
-2. Repository: `https://github.com/laurentmichel/material-home-cards`, type: **Dashboard** (Lovelace)
+Since Home Assistant 2026.11, community cards install from the built-in **Marketplace** (it replaced HACS).
+
+1. Settings → **Marketplace**, then add a custom repository (the Marketplace needs a connected GitHub account for this)
+2. Repository: `https://github.com/laurentmichel/material-home-cards`, category: **Dashboard**
 3. Install **Material Home Cards**, then reload the page (Ctrl+Shift+R)
 
-HACS adds the `/hacsfiles/material-home-cards/material-home-cards.js` resource by itself.
+The Marketplace adds the `/local/community/material-home-cards/material-home-cards.js` resource by itself.
+On Home Assistant 2026.10 or older, install it the same way from HACS.
 
 Every card has a **visual editor** and shows up in the card picker as "M3 …" (M3 Light Slider, M3 Thermostat,
 M3 Graph, M3 Button…). The YAML below still works.
@@ -132,6 +135,8 @@ entities:
 ```
 
 ## `m3-statistics-card`
+
+<img src="https://raw.githubusercontent.com/laurentmichel/material-home-cards/main/docs/images/statistics.png" alt="m3-statistics-card" width="880">
 
 Long-term statistics as bars, one per day, week or month — for example off-peak and peak consumption over the
 last 7 days, like Home Assistant's Statistics graph card. The values of the current period sit at the top; tapping
@@ -567,9 +572,9 @@ visibility:
    `custom:m3-graph-card-dev`, `custom:m3-button-card-dev`, `custom:m3-popup-card-dev`, `custom:m3-room-card-dev`,
    `custom:m3-list-card-dev`, `custom:m3-scene-card-dev`, `custom:m3-multi-graph-card-dev`,
    `custom:m3-media-card-dev`, `custom:m3-person-card-dev`, `custom:m3-map-card-dev`,
-   `custom:m3-weather-card-dev`, `custom:m3-calendar-card-dev`, `custom:m3-progress-card-dev`, `custom:m3-camera-card-dev`, `custom:m3-cover-card-dev` and `custom:m3-badge-dev`
+   `custom:m3-weather-card-dev`, `custom:m3-calendar-card-dev`, `custom:m3-progress-card-dev`, `custom:m3-camera-card-dev`, `custom:m3-cover-card-dev`, `custom:m3-statistics-card-dev` and `custom:m3-badge-dev`
 
-The `-dev` types coexist with the version installed by HACS, which stays untouched. Change the port with
+The `-dev` types coexist with the version installed from the Marketplace, which stays untouched. Change the port with
 `PORT=5001 npm run dev`. If Home Assistant is opened over **https**, the browser blocks an http resource:
 test from Home Assistant's local http address.
 
@@ -580,7 +585,7 @@ light on the right), with Brave or Chromium:
 
 ```sh
 npm run build
-node docs/demo/render.mjs            # every page, or e.g. `node docs/demo/render.mjs scene cover`
+node docs/demo/render.mjs            # every page, or e.g. `node docs/demo/render.mjs scene cover statistics`
 ```
 
 Each `docs/demo/<name>.html` page gives `docs/images/<name>.png`. Use `SCREENSHOT_BROWSER=/path/to/chromium`
@@ -590,11 +595,11 @@ for another browser. The icons used by the pages are extracted to `icons.js` wit
 ### Publishing
 
 The sources live in `src/`, one card per file, with shared code in `src/shared/`. `npm run build`
-(or `node build.mjs`) bundles them into `dist/material-home-cards.js`, the file loaded by HACS: rebuild and commit
+(or `node build.mjs`) bundles them into `dist/material-home-cards.js`, the file loaded by the Marketplace: rebuild and commit
 it before every release.
 
 To publish a version: bump `version` in `package.json`, run `npm run build`, commit, then create a GitHub release
-`vX.Y.Z` — HACS then offers the update.
+`vX.Y.Z` — the Marketplace then offers the update.
 
 ## Support
 
