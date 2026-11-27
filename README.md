@@ -25,6 +25,7 @@ and fall back to the Home Assistant colors otherwise.
 | Task in progress (3D print, washing machine…) | `custom:m3-progress-card` |
 | Camera with no black screen while the live view connects | `custom:m3-camera-card` |
 | Roller shutter (Somfy TaHoma, solar shutters…) | `custom:m3-cover-card` |
+| Daily / weekly / monthly statistics as bars (energy…) | `custom:m3-statistics-card` |
 | Button for any entity | `custom:m3-button-card` |
 | Popup opened by a `#hash` | `custom:m3-popup-card` |
 | Room: temperature, humidity, light and heating | `custom:m3-room-card` |
@@ -128,6 +129,31 @@ entities:
     name: Outdoor
     icon: mdi:tree-outline
     color: '#fea6ff'
+```
+
+## `m3-statistics-card`
+
+Long-term statistics as bars, one per day, week or month — for example off-peak and peak consumption over the
+last 7 days, like Home Assistant's Statistics graph card. The values of the current period sit at the top; tapping
+a bar shows that period's values instead, and tapping it again comes back to the current one. With several
+sensors the bars are stacked on a shared scale. Tapping a value opens that sensor's more-info dialog.
+
+```yaml
+type: custom:m3-statistics-card
+period: day              # optional: day (default), week or month
+count: 7                 # optional, number of bars (default 7)
+stat_type: change        # optional: change (default), mean, min or max
+stacked: true            # optional (default true); false puts one bar per sensor side by side
+chart_height: 110        # optional, bars height in px
+entities:
+  - entity: sensor.energy_offpeak
+    name: Off-peak
+    icon: mdi:weather-night
+    color: indigo        # optional: CSS or HA color
+  - entity: sensor.energy_peak
+    name: Peak
+    icon: mdi:white-balance-sunny
+    color: orange
 ```
 
 ## `m3-button-card`
