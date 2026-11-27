@@ -1,5 +1,5 @@
-/*! Material Home Cards v1.23.0 — https://github.com/laurentmichel/material-home-cards */
-console.info('%c MATERIAL-HOME-CARDS %c v1.23.0 ', 'color:#fff;background:#6750a4;font-weight:700', 'color:#6750a4;background:#eaddff');
+/*! Material Home Cards v1.24.0 — https://github.com/laurentmichel/material-home-cards */
+console.info('%c MATERIAL-HOME-CARDS %c v1.24.0 ', 'color:#fff;background:#6750a4;font-weight:700', 'color:#6750a4;background:#eaddff');
 
 // ---- shared/color.js ----
 // Couleurs nommées de HA (amber, blue...) → variables du thème ; le reste (hex, rgb) tel quel.
@@ -220,6 +220,7 @@ const FR = {
   "Camera: the last image shows at once, then the live view takes over without a black screen": "Caméra : la dernière image s’affiche tout de suite, puis le direct prend le relais sans écran noir",
   "Card background": "Fond de carte",
   "Carousel": "Carrousel",
+  "Change": "Variation",
   "Chevron": "Flèche",
   "Chip on the right (text or template)": "Pastille à droite (texte ou template)",
   "Close": "Fermer",
@@ -250,6 +251,7 @@ const FR = {
   "Empty: everyone except you": "Vide : toutes les personnes sauf vous",
   "Empty: more-info dialog": "Vide : fenêtre de détails",
   "Empty: state color, like native badges": "Vide : couleur de l’état, comme les badges natifs",
+  "Empty: the entity state. Otherwise the long-term statistic over the period, e.g. today's cost of an energy meter": "Vide : l’état de l’entité. Sinon la statistique longue durée sur la période, ex. le coût du jour d’un compteur d’énergie",
   "Empty: theme primary color": "Vide : couleur primaire du thème",
   "Empty: turn the light on / off": "Vide : allumer / éteindre la lumière",
   "End time": "Heure de fin",
@@ -307,6 +309,9 @@ const FR = {
   "Max events": "Événements max.",
   "Max height": "Hauteur max.",
   "Dreame mower (live vector map) or a map camera": "Tondeuse Dreame (carte vectorielle en direct) ou caméra de carte",
+  "Maximum": "Maximum",
+  "Mean": "Moyenne",
+  "Minimum": "Minimum",
   "Show the mowed lanes": "Afficher les bandes tondues",
   "Medium": "Moyens",
   "Mode set by the on button (default: heat)": "Mode activé par le bouton Marche (par défaut : chauffage)",
@@ -374,6 +379,7 @@ const FR = {
   "Shutter": "Volet",
   "Small": "Petits",
   "State": "État",
+  "Statistic": "Statistique",
   "Step of the − / + buttons": "Pas des boutons − / +",
   "Subtitle (empty: entity state)": "Sous-titre (vide : état de l’entité)",
   "Subtitle when active": "Sous-titre quand c’est actif",
@@ -389,6 +395,9 @@ const FR = {
   "The background takes its color when it is on": "Le fond prend sa couleur quand elle est allumée",
   "The difference compares the first two sensors": "L’écart compare les deux premiers capteurs",
   "The icon becomes a flame while the heating is on; its temperature is used when no sensor is set": "L’icône devient une flamme quand le chauffage est en marche ; sa température sert si aucun capteur n’est choisi",
+  "This month": "Ce mois-ci",
+  "This week": "Cette semaine",
+  "This year": "Cette année",
   "Tiles": "Tuiles",
   "Time left": "Temps restant",
   "Timestamp sensor: the time left is derived from it": "Capteur horodatage : le temps restant en est déduit",
@@ -716,6 +725,11 @@ const ON_SURFACE = 'var(--md-sys-color-on-surface, var(--primary-text-color))';
 const HOLD_MS = 500;
 // Délai pour attendre un second appui, seulement si un double appui est configuré.
 const DOUBLE_TAP_MS = 250;
+// Statistique : relue quand l'entité change, au plus toutes les 10 s, et toutes les 5 min pour passer minuit.
+const STAT_THROTTLE_MS = 10000;
+const STAT_REFRESH_MS = 300000;
+const STAT_TYPES = ['change', 'mean', 'min', 'max'];
+const STAT_PERIODS = ['day', 'week', 'month', 'year'];
 
 class M3ButtonCardEditor extends M3CardEditor {
   static schema = [
@@ -735,6 +749,34 @@ class M3ButtonCardEditor extends M3CardEditor {
           ],
         },
       },
+    },
+    {
+      type: 'expandable', name: '', title: 'Statistic', icon: 'mdi:chart-box-outline', schema: [
+        {
+          type: 'grid', name: '', schema: [
+            {
+              name: 'statistic', selector: {
+                select: {
+                  mode: 'dropdown', options: [
+                    { value: 'change', label: 'Change' }, { value: 'mean', label: 'Mean' },
+                    { value: 'min', label: 'Minimum' }, { value: 'max', label: 'Maximum' },
+                  ],
+                },
+              },
+            },
+            {
+              name: 'period', selector: {
+                select: {
+                  mode: 'dropdown', options: [
+                    { value: 'day', label: 'Today' }, { value: 'week', label: 'This week' },
+                    { value: 'month', label: 'This month' }, { value: 'year', label: 'This year' },
+                  ],
+                },
+              },
+            },
+          ],
+        },
+      ],
     },
     {
       type: 'expandable', name: '', title: 'On / off', icon: 'mdi:toggle-switch-outline', schema: [
@@ -765,10 +807,12 @@ class M3ButtonCardEditor extends M3CardEditor {
     entity: 'Entity', name: 'Name', icon: 'Icon', layout: 'Layout', icon_on: 'Icon when on', icon_off: 'Icon when off',
     text_on: 'Text when on', text_off: 'Text when off', show_state: 'Show the state',
     tap_action: 'Tap', hold_action: 'Long press', double_tap_action: 'Double tap',
+    statistic: 'Statistic', period: 'Period',
     color: 'Color when active', active: 'Active when (template)', chip: 'Chip on the right (text or template)',
   };
 
   static helpers = {
+    statistic: 'Empty: the entity state. Otherwise the long-term statistic over the period, e.g. today\'s cost of an energy meter',
     tap_action: 'Empty: action suited to the entity (turn on, run the scene, press…)',
     hold_action: 'Empty: more-info dialog',
     double_tap_action: 'Empty: disabled, a single tap stays instant',
@@ -790,6 +834,15 @@ class M3ButtonCard extends HTMLElement {
 
   setConfig(config) {
     if (!config || !config.entity) throw new Error('m3-button-card: "entity" is required');
+    if (config.statistic && !STAT_TYPES.includes(config.statistic)) {
+      throw new Error(`m3-button-card: "statistic" must be one of ${STAT_TYPES.join(', ')}`);
+    }
+    if (config.period && !STAT_PERIODS.includes(config.period)) {
+      throw new Error(`m3-button-card: "period" must be one of ${STAT_PERIODS.join(', ')}`);
+    }
+    const statKey = config.statistic ? `${config.entity}|${config.statistic}|${config.period ?? 'day'}` : null;
+    if (statKey !== this._statKey) { this._stat = undefined; this._statAt = 0; }
+    this._statKey = statKey;
     this._config = { show_state: true, ...config };
     this._tpl = {};
     if (!this.shadowRoot) this._build();
@@ -801,9 +854,47 @@ class M3ButtonCard extends HTMLElement {
     this._resubscribe();
     this._resizer ??= new ResizeObserver(() => this._fit());
     this._resizer.observe(this);
+    this._statTimer ??= setInterval(() => this._loadStat(true), STAT_REFRESH_MS);
+    this._loadStat(true);
   }
 
-  disconnectedCallback() { unsubscribeAll(this._unsubs); this._unsubs = []; this._resizer?.disconnect(); }
+  disconnectedCallback() {
+    unsubscribeAll(this._unsubs);
+    this._unsubs = [];
+    this._resizer?.disconnect();
+    clearInterval(this._statTimer);
+    this._statTimer = null;
+    clearTimeout(this._statLater);
+  }
+
+  // Statistique longue durée de l'entité sur la période calendaire en cours (comme la carte « Statistique » de HA).
+  async _loadStat(force = false) {
+    const c = this._config;
+    if (!c?.statistic || !this._hass?.callWS || !this.isConnected) return;
+    const wait = this._statAt + STAT_THROTTLE_MS - Date.now();
+    if (!force && wait > 0) {
+      clearTimeout(this._statLater);
+      this._statLater = setTimeout(() => this._loadStat(), wait);
+      return;
+    }
+    this._statAt = Date.now();
+    const key = this._statKey;
+    try {
+      const res = await this._hass.callWS({
+        type: 'recorder/statistic_during_period',
+        statistic_id: c.entity,
+        calendar: { period: c.period ?? 'day' },
+        types: [c.statistic],
+      });
+      if (key !== this._statKey) return;
+      this._stat = res?.[c.statistic] ?? null;
+    } catch (err) {
+      if (key !== this._statKey) return;
+      this._stat = null;
+      console.warn('m3-button-card: statistic unavailable', c.entity, err);
+    }
+    this._render();
+  }
 
   // `active` et `chip` peuvent être des templates : Home Assistant renvoie leur résultat à chaque changement.
   _resubscribe() {
@@ -830,6 +921,7 @@ class M3ButtonCard extends HTMLElement {
     const stateObj = hass.states[this._config.entity];
     if (stateObj === this._stateObj) return;
     this._stateObj = stateObj;
+    this._loadStat(first);
     this._render();
   }
 
@@ -871,7 +963,8 @@ class M3ButtonCard extends HTMLElement {
     if (!this._card) return;
     const c = this._config;
     const s = this._stateObj;
-    const offline = !s || s.state === 'unavailable' || s.state === 'unknown';
+    // En mode statistique, seule la valeur relue compte : l'entité peut être indisponible un moment.
+    const offline = c.statistic ? !s || this._stat === null : !s || s.state === 'unavailable' || s.state === 'unknown';
     // `active` : template, booléen, ou à défaut l'état de l'entité.
     const forced = isTemplate(c.active) ? isTruthy(this._tpl.active) : c.active != null ? isTruthy(c.active) : null;
     const active = !offline && (forced ?? isActive(s));
@@ -908,6 +1001,11 @@ class M3ButtonCard extends HTMLElement {
     const c = this._config;
     if (active && c.text_on) return c.text_on;
     if (!active && c.text_off) return c.text_off;
+    if (c.statistic) {
+      if (this._stat === undefined) return '…';
+      // Arrondi et unité de l'entité, comme son propre état.
+      return this._hass?.formatEntityState?.(s, String(this._stat)) ?? `${this._stat} ${s.attributes.unit_of_measurement ?? ''}`.trim();
+    }
     const format = (obj, attr) => this._hass?.formatEntityAttributeValue?.(obj, attr) ?? obj.attributes[attr];
     const state = this._hass?.formatEntityState?.(s) ?? s.state;
     const [domain] = s.entity_id.split('.');

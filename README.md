@@ -175,6 +175,19 @@ active: >-              # optional: template, or true / false; otherwise based o
 chip: >-                # optional: chip on the right (text or template), hidden when empty
   {% set segs = states('input_text.vacuum_segments').split(',') %}
   {{ segs.index('1') + 1 if '1' in segs else '' }}
+statistic: change       # optional: show a long-term statistic instead of the state (change, mean, min or max)
+period: day             # optional with statistic: day (default), week, month or year — the current calendar period
+```
+
+With `statistic`, the card shows the entity's long-term statistic over the current calendar period, like Home
+Assistant's Statistic card. The value keeps the entity's unit and precision. For example, today's cost of an energy
+meter:
+
+```yaml
+type: custom:m3-button-card
+entity: sensor.energy_cost
+name: Cost today
+statistic: change
 ```
 
 ## `m3-scene-card`
